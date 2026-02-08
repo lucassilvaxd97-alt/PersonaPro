@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "axios": "^1.13.4",
+    "clsx": "^2.1.1",
+    "react-native-gifted-charts": "^1.4.73",
+    "react-native-svg": "^15.15.2",
+    "tailwind-merge": "^3.4.0",
+    "undefined": "@react-three/drei/native",
+    "yet": "^0.1.0",
+    "yey": "^0.0.1",
+    "zustand": "^5.0.11"
+  }
+}
