@@ -15,12 +15,14 @@ export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
-    
-    if (email && password) {
-      navigation.replace('MainTabs');
-    } else {
-      alert("Por favor, preencha suas credenciais.");
+ const handleLogin = () => {
+    console.log("Tentando entrar...");
+    // Força a navegação sem verificar senha por enquanto
+    try {
+      navigation.navigate('MainTabs'); 
+    } catch (error) {
+      console.error("Erro ao navegar:", error);
+      alert("Erro de navegação: " + error);
     }
   };
 

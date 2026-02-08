@@ -1,92 +1,288 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  StyleSheet, 
+  TouchableOpacity, 
+  StatusBar, 
+  Alert,
+  TextInput,
+  Keyboard
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-// Dados simulados (O que viria do Backend)
-const TREINO_ATUAL = [
-  {
-    id: 1,
-    nome: "Supino Reto com Halteres",
-    series: 4,
-    reps: "10-12",
-    carga: "24kg",
-    descanso: "90s"
-  },
-  {
-    id: 2,
-    nome: "Puxada Alta (Polia)",
-    series: 4,
-    reps: "12",
-    carga: "50kg",
-    descanso: "60s"
-  },
-  {
-    id: 3,
-    nome: "Elevação Lateral",
-    series: 3,
-    reps: "15",
-    carga: "10kg",
-    descanso: "45s"
-  },
-  {
-    id: 4,
-    nome: "Agachamento Livre",
-    series: 4,
-    reps: "8-10",
-    carga: "80kg",
-    descanso: "120s"
-  }
-];
+// --- MOCK DATA: TREINOS PARA INICIANTE ---
+// Removemos o "kg" do valor inicial para facilitar a edição numérica
+const TREINOS_INICIAIS = {
+  'A': [
+    { id: 'a1', nome: "Supino Máquina", series: 3, reps: "12-15", carga: "10", descanso: 60, obs: "Segure firme e controle a volta.", concluido: false },
+    { id: 'a2', nome: "Desenv. Halteres", series: 3, reps: "12", carga: "4", descanso: 60, obs: "Cuidado para não arquear as costas.", concluido: false },
+    { id: 'a3', nome: "Tríceps Pulley", series: 3, reps: "15", carga: "15", descanso: 45, obs: "Cotovelos colados no corpo.", concluido: false },
+    { id: 'a4', nome: "Elevação Lateral", series: 3, reps: "12", carga: "3", descanso: 45, obs: "", concluido: false },
+  ],
+  'B': [
+    { id: 'b1', nome: "Puxada Frontal", series: 3, reps: "12-15", carga: "20", descanso: 60, obs: "Traga a barra até o peito.", concluido: false },
+    { id: 'b2', nome: "Remada Baixa", series: 3, reps: "12", carga: "15", descanso: 60, obs: "Estufe o peito ao puxar.", concluido: false },
+    { id: 'b3', nome: "Rosca Direta", series: 3, reps: "12", carga: "5", descanso: 45, obs: "Não balance o corpo.", concluido: false },
+    { id: 'b4', nome: "Rosca Martelo", series: 3, reps: "12", carga: "5", descanso: 45, obs: "", concluido: false },
+  ],
+  'C': [
+    { id: 'c1', nome: "Leg Press 45º", series: 3, reps: "12", carga: "40", descanso: 90, obs: "Não estique o joelho totalmente.", concluido: false },
+    { id: 'c2', nome: "Cadeira Extensora", series: 3, reps: "15", carga: "15", descanso: 60, obs: "Segure 1 seg no topo.", concluido: false },
+    { id: 'c3', nome: "Mesa Flexora", series: 3, reps: "12", carga: "15", descanso: 60, obs: "", concluido: false },
+    { id: 'c4', nome: "Panturrilha", series: 4, reps: "15-20", carga: "20", descanso: 45, obs: "Amplitude máxima.", concluido: false },
+  ],
+  'D': [
+    { id: 'd1', nome: "Esteira", series: 1, reps: "20min", carga: "Vel 5", descanso: 0, obs: "Inclinação 2.0 se possível.", concluido: false },
+    { id: 'd2', nome: "Abdominal Supra", series: 3, reps: "20", carga: "0", descanso: 45, obs: "Peso do corpo.", concluido: false },
+    { id: 'd3', nome: "Prancha", series: 3, reps: "30s", carga: "0", descanso: 45, obs: "Abdômen contraído.", concluido: false },
+  ]
+};
 
-export default function TreinoScreen() {
+type TipoTreino = 'A' | 'B' | 'C' | 'D';
+
+export default function TreinoScreen({ navigation }: any) {
+  const [abaAtiva, setAbaAtiva] = useState<TipoTreino>('A');
+  const [todosTreinos, setTodosTreinos] = useState(TREINOS_INICIAIS);
+  const [activeTimerId, setActiveTimerId] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  // Timer Logic
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (activeTimerId && timeLeft > 0) {
+      interval = setInterval(() => setTimeLeft((t) => t - 1), 1000);
+    } else if (timeLeft === 0 && activeTimerId) {
+      Alert.alert("Tempo Esgotado!", "Bora pra próxima série! 🔥");
+      setActiveTimerId(null);
+    }
+    return () => clearInterval(interval);
+  }, [activeTimerId, timeLeft]);
+
+  const toggleTimer = (id: string, segundos: number) => {
+    if (activeTimerId === id) setActiveTimerId(null);
+    else {
+      setActiveTimerId(id);
+      setTimeLeft(segundos);
+    }
+  };
+
+  const formatTime = (s: number) => {
+    const min = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+  };
+
+  const toggleConcluido = (id: string) => {
+    // Ao concluir, fecha o teclado se estiver aberto
+    Keyboard.dismiss();
+    setTodosTreinos(prev => ({
+      ...prev,
+      [abaAtiva]: prev[abaAtiva].map(ex => 
+        ex.id === id ? { ...ex, concluido: !ex.concluido } : ex
+      )
+    }));
+  };
+
+  // --- NOVA FUNÇÃO: ATUALIZAR CARGA ---
+  const updateCarga = (id: string, novaCarga: string) => {
+    setTodosTreinos(prev => ({
+      ...prev,
+      [abaAtiva]: prev[abaAtiva].map(ex => 
+        ex.id === id ? { ...ex, carga: novaCarga } : ex
+      )
+    }));
+  };
+
+  const finalizarTreino = () => {
+    const listaAtual = todosTreinos[abaAtiva];
+    const faltam = listaAtual.filter(ex => !ex.concluido).length;
+
+    if (faltam > 0) {
+      Alert.alert("Atenção", `Faltam ${faltam} exercícios.`, [
+        { text: "Continuar" },
+        { text: "Sair", onPress: () => navigation.navigate('Dashboard') }
+      ]);
+    } else {
+      Alert.alert("Treino Concluído! 🏆", "Cargas salvas e treino finalizado.", [
+        { text: "Finalizar", onPress: () => navigation.navigate('Dashboard') }
+      ]);
+    }
+  };
+
+  const exerciciosAtuais = todosTreinos[abaAtiva];
+
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Treino A - Hipertrofia</Text>
-        <Text style={styles.headerSubtitle}>Foco: Peito e Costas</Text>
+        <Text style={styles.headerTitle}>Minha Ficha</Text>
+        <Text style={styles.headerSubtitle}>Toque no peso para editar</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.list}>
-        {TREINO_ATUAL.map((exercicio) => (
-          <View key={exercicio.id} style={styles.card}>
-            <View style={styles.cardTop}>
-              <Text style={styles.exNome}>{exercicio.nome}</Text>
-              <Text style={styles.carga}>{exercicio.carga}</Text>
-            </View>
+      {/* Abas */}
+      <View style={styles.tabContainer}>
+        {(['A', 'B', 'C', 'D'] as TipoTreino[]).map((letra) => (
+          <TouchableOpacity 
+            key={letra} 
+            style={[styles.tabButton, abaAtiva === letra && styles.tabActive]}
+            onPress={() => setAbaAtiva(letra)}
+          >
+            <Text style={[styles.tabText, abaAtiva === letra && styles.tabTextActive]}>
+              {letra}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        
+        {/* Label do Treino */}
+        <View style={styles.workoutHeader}>
+           <Text style={styles.workoutLabel}>
+             {abaAtiva === 'A' && "Empurrar (Peito/Tríceps/Ombro)"}
+             {abaAtiva === 'B' && "Puxar (Costas/Bíceps)"}
+             {abaAtiva === 'C' && "Membros Inferiores"}
+             {abaAtiva === 'D' && "Cardio e Abdômen"}
+           </Text>
+        </View>
+
+        {exerciciosAtuais.map((ex) => (
+          <View key={ex.id} style={[styles.card, ex.concluido && styles.cardConcluido]}>
             
-            <View style={styles.cardBottom}>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{exercicio.series} Séries</Text>
-              </View>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{exercicio.reps} Reps</Text>
-              </View>
-              <Text style={styles.descanso}>⏳ {exercicio.descanso}</Text>
+            {/* Título e Dica */}
+            <View style={styles.cardHeader}>
+              <Text style={[styles.exNome, ex.concluido && styles.textConcluido]}>{ex.nome}</Text>
+              {ex.obs !== "" && (
+                <TouchableOpacity onPress={() => Alert.alert("Dica", ex.obs)}>
+                  <Ionicons name="information-circle" size={24} color="#3b82f6" />
+                </TouchableOpacity>
+              )}
             </View>
 
-            <TouchableOpacity style={styles.checkButton}>
-              <Text style={styles.checkText}>Concluir</Text>
-            </TouchableOpacity>
+            {/* Grid de Dados (Com Input na Carga) */}
+            <View style={styles.statsRow}>
+              
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>SÉRIES</Text>
+                <Text style={styles.statValue}>{ex.series}</Text>
+              </View>
+              
+              <View style={styles.separator} />
+              
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>REPS</Text>
+                <Text style={styles.statValue}>{ex.reps}</Text>
+              </View>
+              
+              <View style={styles.separator} />
+              
+              {/* --- CAMPO DE CARGA EDITÁVEL --- */}
+              <View style={styles.statItemInput}>
+                <Text style={styles.statLabel}>KG</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.inputCarga}
+                    value={ex.carga}
+                    onChangeText={(text) => updateCarga(ex.id, text)}
+                    keyboardType="numeric" // Teclado numérico
+                    placeholder="0"
+                    placeholderTextColor="#52525b"
+                    returnKeyType="done"
+                    maxLength={3} // Evita números gigantes
+                  />
+                  <Ionicons name="pencil" size={10} color="#3b82f6" style={{marginLeft: 4}} />
+                </View>
+              </View>
+
+            </View>
+
+            {/* Ações */}
+            <View style={styles.actionRow}>
+              <TouchableOpacity 
+                style={[styles.timerButton, activeTimerId === ex.id && styles.timerButtonActive]}
+                onPress={() => toggleTimer(ex.id, ex.descanso)}
+              >
+                <Ionicons name={activeTimerId === ex.id ? "stop" : "timer-outline"} size={18} color={activeTimerId === ex.id ? "#fff" : "#a1a1aa"} />
+                <Text style={[styles.timerText, activeTimerId === ex.id && styles.timerTextActive]}>
+                  {activeTimerId === ex.id ? formatTime(timeLeft) : `${ex.descanso}s`}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.checkButton, ex.concluido && styles.checkButtonDone]}
+                onPress={() => toggleConcluido(ex.id)}
+              >
+                <Text style={[styles.checkText, ex.concluido && styles.checkTextDone]}>
+                  {ex.concluido ? "FEITO" : "CONCLUIR"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ))}
+
+        <TouchableOpacity style={styles.finishButton} onPress={finalizarTreino}>
+          <Text style={styles.finishButtonText}>FINALIZAR TREINO {abaAtiva}</Text>
+        </TouchableOpacity>
+
+        <View style={{height: 40}} />
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f4f5' },
-  header: { padding: 20, backgroundColor: '#fff', paddingTop: 60, borderBottomWidth: 1, borderColor: '#e4e4e7' },
-  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#18181b' },
-  headerSubtitle: { fontSize: 16, color: '#71717a', marginTop: 4 },
+  container: { flex: 1, backgroundColor: '#000000' },
+  header: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 15, backgroundColor: '#000' },
+  headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
+  headerSubtitle: { fontSize: 14, color: '#a1a1aa' },
+
+  tabContainer: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 10, gap: 10 },
+  tabButton: { flex: 1, paddingVertical: 10, backgroundColor: '#18181b', borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#27272a' },
+  tabActive: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
+  tabText: { color: '#a1a1aa', fontWeight: 'bold', fontSize: 14 },
+  tabTextActive: { color: '#fff' },
+
   list: { padding: 20 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  exNome: { fontSize: 18, fontWeight: 'bold', color: '#27272a', flex: 1 },
-  carga: { fontSize: 18, fontWeight: 'bold', color: '#00e676' },
-  cardBottom: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  badge: { backgroundColor: '#f4f4f5', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
-  badgeText: { fontSize: 12, fontWeight: 'bold', color: '#52525b' },
-  descanso: { fontSize: 12, color: '#a1a1aa', marginLeft: 'auto' },
-  checkButton: { marginTop: 15, backgroundColor: '#18181b', padding: 12, borderRadius: 8, alignItems: 'center' },
-  checkText: { color: '#fff', fontWeight: 'bold' }
+  workoutHeader: { marginBottom: 20 },
+  workoutLabel: { color: '#3b82f6', fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 },
+
+  card: { backgroundColor: '#18181b', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#27272a' },
+  cardConcluido: { opacity: 0.6, borderColor: '#3b82f6' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  exNome: { color: '#fff', fontSize: 18, fontWeight: 'bold', flex: 1 },
+  textConcluido: { textDecorationLine: 'line-through', color: '#71717a' },
+
+  statsRow: { flexDirection: 'row', backgroundColor: '#09090b', borderRadius: 12, padding: 10, marginBottom: 15, justifyContent: 'space-around', alignItems: 'center' },
+  statItem: { alignItems: 'center', width: 60 },
+  statItemInput: { alignItems: 'center', width: 80 }, // Mais largo para o input
+  statLabel: { color: '#71717a', fontSize: 10, fontWeight: 'bold', marginBottom: 4 },
+  statValue: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  separator: { width: 1, height: 20, backgroundColor: '#27272a' },
+
+  // Estilos do Input de Carga
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#3b82f6', paddingBottom: 2 },
+  inputCarga: { 
+    color: '#fff', 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    textAlign: 'center', 
+    width: 40,
+    padding: 0 
+  },
+
+  actionRow: { flexDirection: 'row', gap: 10 },
+  timerButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#09090b', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#27272a', gap: 5 },
+  timerButtonActive: { backgroundColor: '#b91c1c', borderColor: '#ef4444' },
+  timerText: { color: '#a1a1aa', fontWeight: 'bold' },
+  timerTextActive: { color: '#fff' },
+  checkButton: { flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#3b82f6', borderRadius: 8 },
+  checkButtonDone: { backgroundColor: '#3b82f6' },
+  checkText: { color: '#3b82f6', fontWeight: 'bold' },
+  checkTextDone: { color: '#000' },
+  finishButton: { marginTop: 10, backgroundColor: '#fff', padding: 16, borderRadius: 12, alignItems: 'center' },
+  finishButtonText: { fontWeight: 'bold', fontSize: 16 }
 });
