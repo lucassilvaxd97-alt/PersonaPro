@@ -13,6 +13,7 @@ import TreinoScreen from './src/screens/TreinoScreen';
 import DietaScreen from './src/screens/DietaScreen';
 import AvatarScreen from './src/screens/AvatarScreen';
 import PerfilScreen from './src/screens/PerfilScreen';
+import SplashScreen from './src/screens/SplashScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -67,12 +68,18 @@ export default function App() {
     <NavigationContainer>
       <StatusBar style="light" backgroundColor="#000" />
       
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* A primeira tela que aparece é o Login */}
+      {/* initialRouteName agora é 'Splash' */}
+      <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+        
+        {/* Tela 1: Carregamento */}
+        <Stack.Screen name="Splash" component={SplashScreen} />
+        
+        {/* Tela 2: Login */}
         <Stack.Screen name="Login" component={LoginScreen} />
         
-        {/* Após o login, navegamos para cá */}
+        {/* Tela 3: App Principal */}
         <Stack.Screen name="MainTabs" component={TabNavigator} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );
