@@ -1,93 +1,179 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  ScrollView, 
+  TouchableOpacity, 
+  StatusBar, 
+  Image
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+// --- DADOS MOCK (Simulando o Backend) ---
+const USER_DATA = {
+  nome: "Dino",
+  foto: "https://github.com/shadcn.png", // Foto placeholder
+  streak: 12, // Dias seguidos de foco
+  msgProfessor: "⚠️ Aviso: A academia fechará amanhã (feriado). Antecipe seu treino de pernas!",
+  
+  // Dados para o Card de Evolução
+  pesoAtual: "96 kg",
+  pesoMeta: "85 kg"
+};
+
+const RESUMO_DIA = {
+  treinoHoje: "B",
+  treinoNome: "Costas & Bíceps",
+  tempoEstimado: "55 min",
+  treinoFeito: false,
+  
+  caloriasConsumidas: 1250,
+  caloriasMeta: 2800,
+  
+  aguaTomada: 6, 
+  aguaMeta: 12   
+};
 
 export default function HomeScreen({ navigation }: any) {
+  const [msgVisivel, setMsgVisivel] = useState(true);
+
+  // Navegação
+  const irParaTreino = () => navigation.navigate('Treino'); 
+  const irParaDieta = () => navigation.navigate('Dieta');
+  // Vai para a aba 'Evolução' definida no App.tsx
+  const irParaEvolucao = () => navigation.navigate('Evolução'); 
+
+  // Cálculo de Progresso Visual (0 a 1)
+  const progressoCalorias = Math.min(RESUMO_DIA.caloriasConsumidas / RESUMO_DIA.caloriasMeta, 1);
+  const progressoAgua = Math.min(RESUMO_DIA.aguaTomada / RESUMO_DIA.aguaMeta, 1);
+
   return (
     <View style={styles.container}>
-      {/* Cabeçalho Fixo */}
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+
+      {/* HEADER */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Olá, Dino 👋</Text>
-          <Text style={styles.subGreeting}>Vamos esmagar hoje?</Text>
+        <View style={styles.profileRow}>
+          <Image source={{ uri: USER_DATA.foto }} style={styles.profileImage} />
+          <View>
+            <Text style={styles.greeting}>Fala, {USER_DATA.nome}! 🦖</Text>
+            <Text style={styles.subtitle}>Bora esmagar hoje?</Text>
+          </View>
         </View>
-        <TouchableOpacity style={styles.profileButton}>
-          <Image 
-            source={{ uri: 'https://github.com/shadcn.png' }} 
-            style={styles.avatar} 
-          />
+        <TouchableOpacity style={styles.notifButton}>
+          <Ionicons name="notifications-outline" size={24} color="#fff" />
+          <View style={styles.notifBadge} /> 
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        
-        {/* Card Principal: O Treino do Dia */}
-        <View style={styles.heroCard}>
-          <View style={styles.heroHeader}>
-            <Text style={styles.heroLabel}>TREINO DE HOJE</Text>
-            <View style={styles.heroBadge}>
-              <Ionicons name="time-outline" size={14} color="#fff" />
-              <Text style={styles.heroBadgeText}>60 min</Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+
+        {/* 1. MENSAGEM DO PROFESSOR (Se houver) */}
+        {USER_DATA.msgProfessor && msgVisivel && (
+          <View style={styles.alertCard}>
+            <View style={{flexDirection: 'row', alignItems: 'center', flex: 1}}>
+              <Ionicons name="megaphone" size={24} color="#f59e0b" style={{marginRight: 10}} />
+              <Text style={styles.alertText}>{USER_DATA.msgProfessor}</Text>
             </View>
+            <TouchableOpacity onPress={() => setMsgVisivel(false)}>
+              <Ionicons name="close" size={20} color="#71717a" />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* 2. OFENSIVA (STREAK) */}
+        <View style={styles.streakContainer}>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Ionicons name="flame" size={20} color="#ef4444" />
+            <Text style={styles.streakText}> {USER_DATA.streak} Dias de Foco Seguidos!</Text>
           </View>
           
-          <Text style={styles.workoutTitle}>Costas e Bíceps (Hipertrofia)</Text>
-          <Text style={styles.workoutSubtitle}>Foco: Largura e Densidade</Text>
+        </View>
 
-          <TouchableOpacity 
-            style={styles.startButton}
-            onPress={() => navigation.navigate('Treinos')}
+        {/* 3. HERO CARD: TREINO DO DIA */}
+        <Text style={styles.sectionTitle}>Treino de Hoje</Text>
+        <TouchableOpacity style={styles.heroCard} activeOpacity={0.9} onPress={irParaTreino}>
+          <LinearGradient
+            colors={['#1e3a8a', '#172554']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={styles.heroGradient}
           >
-            <Text style={styles.startButtonText}>INICIAR TREINO</Text>
-            <Ionicons name="play" size={20} color="#fff" />
+            <View style={styles.heroHeader}>
+              <View style={styles.tagTreino}>
+                <Text style={styles.tagText}>TREINO {RESUMO_DIA.treinoHoje}</Text>
+              </View>
+              <View style={styles.timeTag}>
+                <Ionicons name="time-outline" size={14} color="#bfdbfe" />
+                <Text style={styles.timeText}>{RESUMO_DIA.tempoEstimado}</Text>
+              </View>
+            </View>
+
+            <Text style={styles.heroTitle}>{RESUMO_DIA.treinoNome}</Text>
+            
+            <View style={styles.heroFooter}>
+              <Text style={styles.heroStatus}>
+                {RESUMO_DIA.treinoFeito ? "Concluído ✅" : "Toque para Iniciar ▶"}
+              </Text>
+              {!RESUMO_DIA.treinoFeito && (
+                <Ionicons name="arrow-forward-circle" size={32} color="#fff" />
+              )}
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* 4. WIDGETS: DIETA E ÁGUA */}
+        <View style={styles.widgetsRow}>
+          <TouchableOpacity style={styles.widgetCard} onPress={irParaDieta}>
+            <View style={styles.widgetHeader}>
+              <Ionicons name="nutrition" size={20} color="#10b981" />
+              <Text style={styles.widgetTitle}>Dieta</Text>
+            </View>
+            <Text style={styles.widgetValue}>{RESUMO_DIA.caloriasMeta - RESUMO_DIA.caloriasConsumidas}</Text>
+            <Text style={styles.widgetLabel}>kcal restantes</Text>
+            <View style={styles.miniProgressBg}>
+              <View style={[styles.miniProgressFill, {width: `${progressoCalorias * 100}%`, backgroundColor: '#10b981'}]} />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.widgetCard} onPress={irParaDieta}>
+            <View style={styles.widgetHeader}>
+              <Ionicons name="water" size={20} color="#3b82f6" />
+              <Text style={styles.widgetTitle}>Água</Text>
+            </View>
+            <Text style={styles.widgetValue}>{RESUMO_DIA.aguaTomada}/{RESUMO_DIA.aguaMeta}</Text>
+            <Text style={styles.widgetLabel}>copos hoje</Text>
+            <View style={styles.miniProgressBg}>
+              <View style={[styles.miniProgressFill, {width: `${progressoAgua * 100}%`, backgroundColor: '#3b82f6'}]} />
+            </View>
           </TouchableOpacity>
         </View>
 
-        {/* Status Rápidos (Grid 2x2) */}
-        <Text style={styles.sectionTitle}>Seu Progresso</Text>
-        <View style={styles.statsGrid}>
-          {/* Peso */}
-          <View style={styles.statCard}>
-            <View style={[styles.iconBox, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
-              <Ionicons name="scale" size={24} color="#3b82f6" />
+        {/* 5. CARD DE EVOLUÇÃO (Único botão de destaque agora) */}
+        <Text style={styles.sectionTitle}>Meu Progresso</Text>
+        <TouchableOpacity style={styles.evoCard} activeOpacity={0.9} onPress={irParaEvolucao}>
+          <LinearGradient
+            colors={['#4c1d95', '#581c87']} // Roxo Escuro
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={styles.evoGradient}
+          >
+            <View style={styles.evoContent}>
+              <View style={styles.evoIconBg}>
+                <Ionicons name="body" size={24} color="#d8b4fe" />
+              </View>
+              <View>
+                <Text style={styles.evoTitle}>Comparativo Físico</Text>
+                <Text style={styles.evoSubtitle}>
+                  Atual: <Text style={{color:'#fff'}}>{USER_DATA.pesoAtual}</Text> • Meta: <Text style={{color:'#fff'}}>{USER_DATA.pesoMeta}</Text>
+                </Text>
+              </View>
             </View>
-            <Text style={styles.statValue}>96.0 kg</Text>
-            <Text style={styles.statLabel}>Peso Atual</Text>
-          </View>
-
-          {/* Frequência */}
-          <View style={styles.statCard}>
-            <View style={[styles.iconBox, { backgroundColor: 'rgba(34, 197, 94, 0.1)' }]}>
-              <Ionicons name="flame" size={24} color="#22c55e" />
-            </View>
-            <Text style={styles.statValue}>4 Dias</Text>
-            <Text style={styles.statLabel}>Sequência</Text>
-          </View>
-        </View>
-
-        {/* Próxima Refeição */}
-        <Text style={styles.sectionTitle}>Próxima Refeição</Text>
-        <View style={styles.mealCard}>
-          <View style={styles.mealTime}>
-            <Text style={styles.mealTimeText}>12:00</Text>
-          </View>
-          <View style={styles.mealContent}>
-            <Text style={styles.mealTitle}>Almoço</Text>
-            <Text style={styles.mealDesc}>150g Frango Grelhado + 100g Arroz...</Text>
-          </View>
-          <TouchableOpacity onPress={() => navigation.navigate('Dieta')}>
-            <Ionicons name="chevron-forward" size={24} color="#52525b" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Banner Motivacional ou Aviso */}
-        <View style={styles.banner}>
-          <Ionicons name="information-circle" size={24} color="#3b82f6" />
-          <Text style={styles.bannerText}>
-            Lembre-se de registrar suas cargas hoje para gerar o gráfico de evolução.
-          </Text>
-        </View>
-
+            <Ionicons name="chevron-forward" size={24} color="#d8b4fe" />
+          </LinearGradient>
+        </TouchableOpacity>
+        
+        <View style={{height: 40}} />
       </ScrollView>
     </View>
   );
@@ -95,90 +181,56 @@ export default function HomeScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: 20, 
-    paddingTop: 60, 
-    paddingBottom: 20 
-  },
-  greeting: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
-  subGreeting: { fontSize: 14, color: '#a1a1aa' },
-  profileButton: { padding: 2, borderWidth: 1, borderColor: '#3b82f6', borderRadius: 25 },
-  avatar: { width: 40, height: 40, borderRadius: 20 },
   
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 100 },
+  // Header
+  header: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  profileRow: { flexDirection: 'row', alignItems: 'center' },
+  profileImage: { width: 50, height: 50, borderRadius: 25, marginRight: 15, borderWidth: 2, borderColor: '#3b82f6' },
+  greeting: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+  subtitle: { color: '#a1a1aa', fontSize: 14 },
+  notifButton: { padding: 8, backgroundColor: '#18181b', borderRadius: 12, borderWidth: 1, borderColor: '#27272a' },
+  notifBadge: { position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4, backgroundColor: '#ef4444' },
 
-  // Hero Card (Treino do Dia)
-  heroCard: {
-    backgroundColor: '#18181b',
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 30,
-    borderWidth: 1,
-    borderColor: '#27272a',
-  },
-  heroHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  heroLabel: { color: '#3b82f6', fontWeight: 'bold', fontSize: 12, letterSpacing: 1 },
-  heroBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#27272a', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  heroBadgeText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-  workoutTitle: { fontSize: 22, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
-  workoutSubtitle: { fontSize: 14, color: '#a1a1aa', marginBottom: 20 },
-  startButton: {
-    backgroundColor: '#3b82f6', // Azul Tech
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-    shadowColor: '#3b82f6',
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-  },
-  startButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  content: { paddingHorizontal: 20 },
 
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', marginBottom: 15 },
+  // Alerta
+  alertCard: { flexDirection: 'row', backgroundColor: '#451a03', padding: 12, borderRadius: 12, marginBottom: 20, borderWidth: 1, borderColor: '#f59e0b', alignItems: 'flex-start' },
+  alertText: { color: '#fbbf24', fontSize: 13, flex: 1, paddingRight: 10, fontWeight: '500' },
 
-  // Stats Grid
-  statsGrid: { flexDirection: 'row', gap: 15, marginBottom: 30 },
-  statCard: { 
-    flex: 1, 
-    backgroundColor: '#18181b', 
-    padding: 16, 
-    borderRadius: 16, 
-    alignItems: 'center' 
-  },
-  iconBox: { padding: 10, borderRadius: 12, marginBottom: 10 },
-  statValue: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
-  statLabel: { fontSize: 12, color: '#a1a1aa' },
+  // Streak
+  streakContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#18181b', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 50, marginBottom: 25, borderWidth: 1, borderColor: '#27272a' },
+  streakText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  streakSub: { color: '#52525b', fontSize: 12 },
 
-  // Meal Card
-  mealCard: {
-    flexDirection: 'row',
-    backgroundColor: '#18181b',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 30,
-    borderLeftWidth: 4,
-    borderLeftColor: '#22c55e', // Verde para comida
-  },
-  mealTime: { marginRight: 15 },
-  mealTimeText: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
-  mealContent: { flex: 1 },
-  mealTitle: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
-  mealDesc: { fontSize: 12, color: '#a1a1aa' },
+  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 15 },
 
-  // Banner
-  banner: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-    alignItems: 'center',
-  },
-  bannerText: { flex: 1, color: '#3b82f6', fontSize: 12, lineHeight: 18 },
+  // Hero Card
+  heroCard: { height: 160, borderRadius: 24, marginBottom: 25, overflow: 'hidden' },
+  heroGradient: { flex: 1, padding: 20, justifyContent: 'space-between' },
+  heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  tagTreino: { backgroundColor: '#3b82f6', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  tagText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
+  timeTag: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  timeText: { color: '#bfdbfe', fontSize: 12 },
+  heroTitle: { color: '#fff', fontSize: 28, fontWeight: 'bold' },
+  heroFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  heroStatus: { color: '#bfdbfe', fontSize: 14, fontWeight: 'bold' },
+
+  // Widgets
+  widgetsRow: { flexDirection: 'row', gap: 15, marginBottom: 25 },
+  widgetCard: { flex: 1, backgroundColor: '#18181b', padding: 16, borderRadius: 20, borderWidth: 1, borderColor: '#27272a' },
+  widgetHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  widgetTitle: { color: '#a1a1aa', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase' },
+  widgetValue: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
+  widgetLabel: { color: '#52525b', fontSize: 12, marginBottom: 10 },
+  miniProgressBg: { height: 4, backgroundColor: '#27272a', borderRadius: 2, overflow: 'hidden' },
+  miniProgressFill: { height: '100%', borderRadius: 2 },
+
+  // Card Evolução
+  evoCard: { borderRadius: 20, overflow: 'hidden', marginBottom: 20 },
+  evoGradient: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20 },
+  evoContent: { flexDirection: 'row', alignItems: 'center', gap: 15 },
+  evoIconBg: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+  evoTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  evoSubtitle: { color: '#d8b4fe', fontSize: 13, marginTop: 2 }
 });

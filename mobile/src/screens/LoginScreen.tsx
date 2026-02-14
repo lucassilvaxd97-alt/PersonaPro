@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; // <--- O segredo tá aqui!
 import { 
   View, 
   Text, 
@@ -7,7 +7,8 @@ import {
   StyleSheet, 
   KeyboardAvoidingView, 
   Platform,
-  StatusBar 
+  StatusBar,
+  Alert 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -16,15 +17,13 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
 
  const handleLogin = () => {
-    console.log("Tentando entrar...");
-    // Força a navegação sem verificar senha por enquanto
-    try {
-      navigation.navigate('MainTabs'); 
-    } catch (error) {
-      console.error("Erro ao navegar:", error);
-      alert("Erro de navegação: " + error);
-    }
-  };
+  if (email === '' || password === '') {
+    Alert.alert("Atenção", "Preencha todos os campos!");
+    return;
+  }
+  // Agora 'MainTabs' existe no App.tsx!
+  navigation.navigate('MainTabs'); 
+};
 
   return (
     <View style={styles.container}>

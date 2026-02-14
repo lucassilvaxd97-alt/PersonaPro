@@ -2,352 +2,286 @@ import React, { useState } from 'react';
 import { 
   View, 
   Text, 
-  ScrollView, 
   StyleSheet, 
+  ScrollView, 
   TouchableOpacity, 
   StatusBar,
+  Dimensions,
   Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+// Importando BarChart agora!
+import { BarChart } from "react-native-gifted-charts";
 
-// --- MOCK DATA: Dieta Flexível (Agora com 6 Refeições) ---
-const DIETA_FLEXIVEL = [
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+// --- DADOS MOCK (Dieta) ---
+const META_DIARIA = {
+  calorias: 2800, proteina: 180, carbo: 300, gordura: 70
+};
+
+const DADOS_REFEICOES = [
   { 
-    id: 1, 
-    horario: "07:30", 
-    nome: "Café da Manhã",
-    concluido: false,
-    lembrete: true,
-    obs: "Beba água ao acordar.",
-    opcoes: {
-      1: {
-        titulo: "Clássico (Salgado)",
-        itens: ["3 Ovos Mexidos", "2 Fatias Pão Integral", "Café Preto"],
-        calorias: 450
-      },
-      2: {
-        titulo: "Doce (Mingau)",
-        itens: ["40g Aveia", "30g Whey Protein", "1 Banana"],
-        calorias: 420
-      }
-    }
+    id: '1', nome: 'Café da Manhã', horario: '07:00', feito: false, opcaoEscolhida: 1,
+    opcao1: ['3 Ovos Mexidos', '2 Fatias Pão Integral', '1 Banana', 'Café Preto'],
+    opcao2: ['Crepioca (2 ovos + 30g tapioca)', 'Requeijão Light', '1 Maçã']
   },
   { 
-    id: 2, 
-    horario: "10:30", 
-    nome: "Lanche da Manhã",
-    concluido: false,
-    lembrete: false,
-    obs: "",
-    opcoes: {
-      1: {
-        titulo: "Fruta + Prot",
-        itens: ["1 Maçã", "1 Iogurte Natural"],
-        calorias: 200
-      },
-      2: {
-        titulo: "Oleaginosas",
-        itens: ["30g Mix de Castanhas", "Água de Coco"],
-        calorias: 250
-      }
-    }
+    id: '2', nome: 'Almoço', horario: '12:30', feito: false, opcaoEscolhida: 1,
+    opcao1: ['200g Frango Grelhado', '150g Arroz Branco', 'Feijão (1 concha)', 'Salada à vontade'],
+    opcao2: ['200g Patinho Moído', '200g Batata Inglesa', 'Legumes no Vapor']
   },
   { 
-    id: 3, 
-    horario: "13:30", 
-    nome: "Almoço",
-    concluido: false,
-    lembrete: true,
-    obs: "Salada à vontade.",
-    opcoes: {
-      1: {
-        titulo: "Frango Grelhado",
-        itens: ["150g Peito de Frango", "100g Arroz Branco", "Feijão"],
-        calorias: 600
-      },
-      2: {
-        titulo: "Carne Moída",
-        itens: ["150g Patinho", "120g Batata Doce", "Legumes"],
-        calorias: 650
-      }
-    }
+    id: '3', nome: 'Lanche da Tarde', horario: '16:00', feito: false, opcaoEscolhida: 1,
+    opcao1: ['1 Scoop Whey Protein', '30g Aveia', 'Fruta'],
+    opcao2: ['Iogurte Natural', 'Granola sem açúcar', 'Mel']
   },
   { 
-    id: 4, 
-    horario: "16:30", 
-    nome: "Lanche da Tarde",
-    concluido: false,
-    lembrete: true,
-    obs: "",
-    opcoes: {
-      1: {
-        titulo: "Vitamina",
-        itens: ["200ml Leite Desn.", "1 Banana", "30g Aveia"],
-        calorias: 350
-      },
-      2: {
-        titulo: "Sanduíche",
-        itens: ["2 Fatias Pão", "Pasta de Amendoim"],
-        calorias: 380
-      }
-    }
-  },
-  { 
-    id: 5, 
-    horario: "20:00", 
-    nome: "Jantar",
-    concluido: false,
-    lembrete: true,
-    obs: "Evite líquidos.",
-    opcoes: {
-      1: {
-        titulo: "Omelete",
-        itens: ["3 Ovos", "Queijo Branco", "Espinafre"],
-        calorias: 400
-      },
-      2: {
-        titulo: "Sopa",
-        itens: ["Sopa de Legumes com Frango desfiado"],
-        calorias: 300
-      }
-    }
-  },
-  // --- NOVA REFEIÇÃO ADICIONADA: CEIA ---
-  { 
-    id: 6, 
-    horario: "22:30", 
-    nome: "Ceia",
-    concluido: false,
-    lembrete: false,
-    obs: "Para melhorar o sono.",
-    opcoes: {
-      1: {
-        titulo: "Gorduras Boas",
-        itens: ["2 Castanhas do Pará", "Chá de Camomila"],
-        calorias: 120
-      },
-      2: {
-        titulo: "Proteína Lenta",
-        itens: ["1 Scoop Albumina ou Caseína", "Água"],
-        calorias: 110
-      }
-    }
+    id: '4', nome: 'Jantar', horario: '20:00', feito: false, opcaoEscolhida: 1,
+    opcao1: ['150g Peixe Branco', '100g Purê de Mandioquinha', 'Brócolis'],
+    opcao2: ['Omelete (3 ovos)', 'Salada Grande', 'Azeite de Oliva']
   },
 ];
 
-export default function DietaScreen({ navigation }: any) {
-  const [refeicoes, setRefeicoes] = useState(DIETA_FLEXIVEL);
+const LISTA_COMPRAS_INICIAL = [
+  { id: 'c1', item: 'Ovos (30 un)', check: false },
+  { id: 'c2', item: 'Frango (2kg)', check: false },
+  { id: 'c3', item: 'Arroz Integral', check: false },
+  { id: 'c4', item: 'Aveia em Flocos', check: false },
+  { id: 'c5', item: 'Whey Protein', check: false },
+  { id: 'c6', item: 'Banana Prata', check: false },
+  { id: 'c7', item: 'Pasta de Amendoim', check: false },
+];
+
+export default function DietaScreen() {
+  const [abaAtiva, setAbaAtiva] = useState<'Refeicoes' | 'Resumo' | 'Compras'>('Refeicoes');
+  const [refeicoes, setRefeicoes] = useState(DADOS_REFEICOES);
+  const [listaCompras, setListaCompras] = useState(LISTA_COMPRAS_INICIAL);
   const [coposAgua, setCoposAgua] = useState(0);
-  
-  // Estado para controlar qual opção está selecionada (1 ou 2)
-  // IMPORTANTE: Adicionei o ID 6 aqui para a Ceia funcionar
-  const [escolhas, setEscolhas] = useState<{[key: number]: 1 | 2}>({
-    1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1
-  });
+  const META_AGUA = 12; 
 
-  // Trocar Opção (1 ou 2)
-  const selecionarOpcao = (idRefeicao: number, opcao: 1 | 2) => {
-    setEscolhas(prev => ({ ...prev, [idRefeicao]: opcao }));
+  // --- ACTIONS ---
+  const toggleRefeicao = (id: string) => {
+    setRefeicoes(prev => prev.map(item => item.id === id ? { ...item, feito: !item.feito } : item));
   };
-
-  // Marcar Check (Feito)
-  const toggleRefeicao = (id: number) => {
-    setRefeicoes(prev => prev.map(ref => 
-      ref.id === id ? { ...ref, concluido: !ref.concluido } : ref
-    ));
+  const mudarOpcao = (id: string, opcao: 1 | 2) => {
+    setRefeicoes(prev => prev.map(item => item.id === id ? { ...item, opcaoEscolhida: opcao } : item));
   };
-
-  // Lógica da Água
-  const addAgua = () => setCoposAgua(c => (c < 15 ? c + 1 : c));
-  const removeAgua = () => setCoposAgua(c => (c > 0 ? c - 1 : 0));
-
-  // Cálculos Dinâmicos (baseados na opção escolhida)
-  const calcularTotais = () => {
-    let total = 0;
-    let consumido = 0;
-
-    refeicoes.forEach(ref => {
-      const opcaoEscolhida = escolhas[ref.id] || 1; // Fallback para 1 se der erro
-      const dadosOpcao = ref.opcoes[opcaoEscolhida];
-      
-      if (dadosOpcao) {
-        total += dadosOpcao.calorias;
-        if (ref.concluido) {
-          consumido += dadosOpcao.calorias;
-        }
-      }
-    });
-
-    return { total, consumido };
+  const toggleCompra = (id: string) => {
+    setListaCompras(prev => prev.map(item => item.id === id ? { ...item, check: !item.check } : item));
   };
+  const addAgua = () => setCoposAgua(prev => prev + 1);
+  const resetAgua = () => setCoposAgua(0);
 
-  const { total, consumido } = calcularTotais();
+  // --- DADOS DO GRÁFICO DE BARRAS ---
+  const barData = [
+    { 
+      value: META_DIARIA.proteina, 
+      label: 'Prot', 
+      frontColor: '#3b82f6', 
+      topLabelComponent: () => <Text style={{color: '#3b82f6', fontSize: 12, marginBottom: 5, fontWeight: 'bold'}}>{META_DIARIA.proteina}g</Text>
+    },
+    { 
+      value: META_DIARIA.carbo, 
+      label: 'Carb', 
+      frontColor: '#10b981', 
+      topLabelComponent: () => <Text style={{color: '#10b981', fontSize: 12, marginBottom: 5, fontWeight: 'bold'}}>{META_DIARIA.carbo}g</Text>
+    },
+    { 
+      value: META_DIARIA.gordura, 
+      label: 'Gord', 
+      frontColor: '#f59e0b', 
+      topLabelComponent: () => <Text style={{color: '#f59e0b', fontSize: 12, marginBottom: 5, fontWeight: 'bold'}}>{META_DIARIA.gordura}g</Text>
+    },
+  ];
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
-      
-      {/* Header Fixo */}
+
+      {/* HEADER */}
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <Text style={styles.headerTitle}>Plano Flexível</Text>
-          <Text style={styles.headerProgress}>{consumido} / {total} kcal</Text>
-        </View>
-        <View style={styles.progressBarBg}>
-          <View style={[styles.progressBarFill, { width: total > 0 ? `${(consumido / total) * 100}%` : '0%' }]} />
-        </View>
+        <Text style={styles.headerTitle}>Nutrição</Text>
+        <Text style={styles.headerSubtitle}>{META_DIARIA.calorias} kcal • Foco na Dieta 🎯</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* Widget Água */}
-        <View style={styles.waterCard}>
-          <View>
-            <Text style={styles.waterTitle}>Hidratação</Text>
-            <Text style={styles.waterSubtitle}>{coposAgua * 250}ml / 3000ml</Text>
-          </View>
-          <View style={styles.waterControls}>
-            <TouchableOpacity onPress={removeAgua} style={styles.waterButtonSmall}>
-              <Ionicons name="remove" size={20} color="#3b82f6" />
-            </TouchableOpacity>
-            <View style={styles.waterCount}>
-              <Ionicons name="water" size={18} color="#3b82f6" />
-              <Text style={styles.waterNumber}>{coposAgua}</Text>
-            </View>
-            <TouchableOpacity onPress={addAgua} style={styles.waterButton}>
-              <Ionicons name="add" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <Text style={styles.sectionTitle}>Refeições do Dia</Text>
-        
-        {refeicoes.map((ref) => {
-          const opcaoAtiva = escolhas[ref.id] || 1;
-          const dados = ref.opcoes[opcaoAtiva];
-
-          return (
-            <View key={ref.id} style={[styles.card, ref.concluido && styles.cardConcluido]}>
-              
-              {/* Topo do Card */}
-              <View style={styles.cardHeader}>
-                <View style={styles.timeWrapper}>
-                   <Text style={styles.timeText}>{ref.horario}</Text>
-                </View>
-                <Text style={[styles.refName, ref.concluido && styles.textConcluido]}>{ref.nome}</Text>
-                
-                {ref.obs !== "" && (
-                  <TouchableOpacity onPress={() => Alert.alert("Dica do Nutri", ref.obs)}>
-                    <Ionicons name="information-circle" size={20} color="#3b82f6" />
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {/* Seletor de Opções (Abas dentro do card) */}
-              <View style={styles.optionSelector}>
-                <TouchableOpacity 
-                  style={[styles.optionBtn, opcaoAtiva === 1 && styles.optionBtnActive]}
-                  onPress={() => selecionarOpcao(ref.id, 1)}
-                  disabled={ref.concluido} 
-                >
-                  <Text style={[styles.optionText, opcaoAtiva === 1 && styles.optionTextActive]}>Opção 1</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.optionBtn, opcaoAtiva === 2 && styles.optionBtnActive]}
-                  onPress={() => selecionarOpcao(ref.id, 2)}
-                  disabled={ref.concluido}
-                >
-                  <Text style={[styles.optionText, opcaoAtiva === 2 && styles.optionTextActive]}>Opção 2</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Detalhes da Opção Escolhida */}
-              <View style={styles.foodList}>
-                <Text style={styles.optionTitle}>{dados.titulo}</Text>
-                {dados.itens.map((item, i) => (
-                  <Text key={i} style={[styles.foodItem, ref.concluido && styles.textConcluido]}>• {item}</Text>
-                ))}
-              </View>
-
-              {/* Rodapé */}
-              <View style={styles.cardFooter}>
-                <Text style={styles.calText}>{dados.calorias} kcal</Text>
-                
-                <TouchableOpacity 
-                  style={[styles.checkButton, ref.concluido && styles.checkButtonActive]}
-                  onPress={() => toggleRefeicao(ref.id)}
-                >
-                  <Text style={[styles.checkText, ref.concluido && styles.checkTextActive]}>
-                    {ref.concluido ? "FEITO" : "MARCAR"}
-                  </Text>
-                  <Ionicons name={ref.concluido ? "checkmark-circle" : "ellipse-outline"} size={18} color={ref.concluido ? "#fff" : "#3b82f6"} />
-                </TouchableOpacity>
-              </View>
-
-            </View>
-          );
-        })}
-
-        <TouchableOpacity style={styles.finishButton} onPress={() => navigation.navigate('Dashboard')}>
-          <Text style={styles.finishButtonText}>FINALIZAR O DIA ✅</Text>
+      {/* ABAS */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity style={[styles.tabBtn, abaAtiva === 'Refeicoes' && styles.tabBtnActive]} onPress={() => setAbaAtiva('Refeicoes')}>
+          <Text style={[styles.tabText, abaAtiva === 'Refeicoes' && styles.tabTextActive]}>Refeições</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={[styles.tabBtn, abaAtiva === 'Compras' && styles.tabBtnActive]} onPress={() => setAbaAtiva('Compras')}>
+          <Text style={[styles.tabText, abaAtiva === 'Compras' && styles.tabTextActive]}>Compras</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tabBtn, abaAtiva === 'Resumo' && styles.tabBtnActive]} onPress={() => setAbaAtiva('Resumo')}>
+          <Text style={[styles.tabText, abaAtiva === 'Resumo' && styles.tabTextActive]}>Resumo</Text>
+        </TouchableOpacity>
+      </View>
 
-        <View style={{height: 40}} />
+      <ScrollView contentContainerStyle={styles.content}>
+        
+        {/* === ABA 1: REFEIÇÕES === */}
+        {abaAtiva === 'Refeicoes' && (
+          <View>
+            <View style={styles.waterCard}>
+              <View>
+                <Text style={styles.waterTitle}>Hidratação Diária</Text>
+                <Text style={styles.waterSubtitle}>{coposAgua * 250}ml / {META_AGUA * 250}ml</Text>
+              </View>
+              <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
+                <TouchableOpacity onPress={resetAgua}><Ionicons name="refresh" size={20} color="#60a5fa" /></TouchableOpacity>
+                <TouchableOpacity style={styles.btnAddWater} onPress={addAgua}>
+                  <Ionicons name="water" size={20} color="#fff" />
+                  <Text style={styles.textAddWater}>+250ml</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <View style={styles.progressBarBg}>
+              <View style={[styles.progressBarFill, {width: `${Math.min((coposAgua/META_AGUA)*100, 100)}%`}]} />
+            </View>
+
+            {refeicoes.map((ref) => (
+              <View key={ref.id} style={[styles.card, ref.feito && styles.cardDone]}>
+                <TouchableOpacity onPress={() => toggleRefeicao(ref.id)} style={styles.cardHeader}>
+                  <View>
+                    <Text style={[styles.cardTitle, ref.feito && styles.textDone]}>{ref.nome}</Text>
+                    <Text style={styles.cardTime}>{ref.horario}</Text>
+                  </View>
+                  <Ionicons name={ref.feito ? "checkmark-circle" : "ellipse-outline"} size={28} color={ref.feito ? "#10b981" : "#52525b"} />
+                </TouchableOpacity>
+
+                <View style={styles.optionSelector}>
+                  <TouchableOpacity style={[styles.optionBtn, ref.opcaoEscolhida === 1 && styles.optionBtnActive]} onPress={() => mudarOpcao(ref.id, 1)}>
+                    <Text style={[styles.optionText, ref.opcaoEscolhida === 1 && styles.optionTextActive]}>Opção 1</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.optionBtn, ref.opcaoEscolhida === 2 && styles.optionBtnActive]} onPress={() => mudarOpcao(ref.id, 2)}>
+                    <Text style={[styles.optionText, ref.opcaoEscolhida === 2 && styles.optionTextActive]}>Opção 2</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.foodList}>
+                  {(ref.opcaoEscolhida === 1 ? ref.opcao1 : ref.opcao2).map((item, index) => (
+                    <Text key={index} style={[styles.foodItem, ref.feito && styles.textDone]}>• {item}</Text>
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* === ABA 2: COMPRAS === */}
+        {abaAtiva === 'Compras' && (
+          <View>
+            <Text style={styles.sectionTitle}>Mercado da Semana 🛒</Text>
+            {listaCompras.map((item) => (
+              <TouchableOpacity key={item.id} style={styles.shopItem} onPress={() => toggleCompra(item.id)}>
+                <Text style={[styles.shopText, item.check && styles.textDone]}>{item.item}</Text>
+                <Ionicons name={item.check ? "checkbox" : "square-outline"} size={24} color={item.check ? "#3b82f6" : "#52525b"} />
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.btnPrint} onPress={() => Alert.alert("Em breve", "Função de exportar PDF")}>
+              <Ionicons name="share-social-outline" size={20} color="#fff" />
+              <Text style={{color: '#fff', fontWeight: 'bold', marginLeft: 8}}>COMPARTILHAR LISTA</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* === ABA 3: RESUMO (GRÁFICO DE COLUNAS) === */}
+        {abaAtiva === 'Resumo' && (
+          <View style={styles.chartSection}>
+            <Text style={styles.sectionTitle}>Distribuição de Macros</Text>
+            
+            <View style={styles.chartWrapper}>
+              <BarChart
+                data={barData}
+                barWidth={50}
+                noOfSections={4}
+                barBorderTopLeftRadius={8}
+                barBorderTopRightRadius={8}
+                frontColor="#3b82f6"
+                yAxisThickness={0}
+                xAxisThickness={1}
+                xAxisColor="#3f3f46"
+                yAxisTextStyle={{color: '#a1a1aa'}}
+                xAxisLabelTextStyle={{color: '#fff', fontWeight: 'bold', marginTop: 5}}
+                height={220}
+                width={SCREEN_WIDTH - 80}
+                spacing={40} // Espaço entre as barras
+                hideRules
+                isAnimated
+              />
+            </View>
+
+            {/* CARD DE DETALHES ABAIXO */}
+            <View style={styles.detailsGrid}>
+              <View style={[styles.detailCard, {borderColor: '#3b82f6'}]}>
+                <Text style={[styles.detailValue, {color: '#3b82f6'}]}>{META_DIARIA.proteina}g</Text>
+                <Text style={styles.detailLabel}>Proteína</Text>
+              </View>
+              <View style={[styles.detailCard, {borderColor: '#10b981'}]}>
+                <Text style={[styles.detailValue, {color: '#10b981'}]}>{META_DIARIA.carbo}g</Text>
+                <Text style={styles.detailLabel}>Carbo</Text>
+              </View>
+              <View style={[styles.detailCard, {borderColor: '#f59e0b'}]}>
+                <Text style={[styles.detailValue, {color: '#f59e0b'}]}>{META_DIARIA.gordura}g</Text>
+                <Text style={styles.detailLabel}>Gordura</Text>
+              </View>
+            </View>
+
+          </View>
+        )}
+
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000000' },
-  
-  header: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 20, backgroundColor: '#000', borderBottomWidth: 1, borderColor: '#18181b' },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 10 },
+  container: { flex: 1, backgroundColor: '#000' },
+  header: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 15, backgroundColor: '#000' },
   headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
-  headerProgress: { fontSize: 14, color: '#3b82f6', fontWeight: 'bold' },
-  progressBarBg: { height: 6, backgroundColor: '#27272a', borderRadius: 3 },
-  progressBarFill: { height: 6, backgroundColor: '#3b82f6', borderRadius: 3 },
+  headerSubtitle: { fontSize: 14, color: '#3b82f6', fontWeight: 'bold' },
 
-  scrollContent: { padding: 20 },
+  tabContainer: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 20, gap: 10 },
+  tabBtn: { flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 20, backgroundColor: '#18181b', borderWidth: 1, borderColor: '#27272a' },
+  tabBtnActive: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
+  tabText: { color: '#a1a1aa', fontWeight: 'bold', fontSize: 12 },
+  tabTextActive: { color: '#fff' },
+  content: { paddingHorizontal: 20, paddingBottom: 40 },
 
-  waterCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30, borderWidth: 1, borderColor: 'rgba(59, 130, 246, 0.3)' },
-  waterTitle: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  waterSubtitle: { color: '#3b82f6', fontSize: 12, marginTop: 4 },
-  waterControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  waterButtonSmall: { padding: 6, backgroundColor: '#09090b', borderRadius: 8 },
-  waterButton: { padding: 8, backgroundColor: '#3b82f6', borderRadius: 8 },
-  waterCount: { flexDirection: 'row', alignItems: 'center', gap: 4, width: 40, justifyContent: 'center' },
-  waterNumber: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-
-  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 15 },
-
-  card: { backgroundColor: '#18181b', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#27272a' },
-  cardConcluido: { opacity: 0.5, borderColor: '#3b82f6' },
-
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  timeWrapper: { backgroundColor: '#09090b', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginRight: 10 },
-  timeText: { color: '#a1a1aa', fontWeight: 'bold', fontSize: 12 },
-  refName: { color: '#fff', fontWeight: 'bold', fontSize: 16, flex: 1 },
-  textConcluido: { textDecorationLine: 'line-through', color: '#71717a' },
-
-  optionSelector: { flexDirection: 'row', backgroundColor: '#09090b', borderRadius: 8, padding: 4, marginBottom: 12 },
-  optionBtn: { flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: 6 },
+  // HIDRATAÇÃO E REFEIÇÕES
+  waterCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1e3a8a', padding: 16, borderRadius: 16, marginBottom: 10 },
+  waterTitle: { color: '#bfdbfe', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase' },
+  waterSubtitle: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
+  btnAddWater: { flexDirection: 'row', backgroundColor: '#3b82f6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignItems: 'center', gap: 5 },
+  textAddWater: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
+  progressBarBg: { height: 6, backgroundColor: '#172554', borderRadius: 3, marginBottom: 20, overflow: 'hidden' },
+  progressBarFill: { height: '100%', backgroundColor: '#60a5fa' },
+  card: { backgroundColor: '#18181b', padding: 16, borderRadius: 16, marginBottom: 15, borderWidth: 1, borderColor: '#27272a' },
+  cardDone: { opacity: 0.6, borderColor: '#10b981' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  cardTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  cardTime: { color: '#3b82f6', fontWeight: 'bold' },
+  optionSelector: { flexDirection: 'row', backgroundColor: '#09090b', padding: 4, borderRadius: 8, marginBottom: 10 },
+  optionBtn: { flex: 1, paddingVertical: 6, alignItems: 'center', borderRadius: 6 },
   optionBtnActive: { backgroundColor: '#27272a' },
   optionText: { color: '#52525b', fontSize: 12, fontWeight: 'bold' },
   optionTextActive: { color: '#fff' },
-
-  foodList: { marginLeft: 4, marginBottom: 15 },
-  optionTitle: { color: '#3b82f6', fontSize: 12, fontWeight: 'bold', marginBottom: 4, textTransform: 'uppercase' },
+  foodList: { paddingLeft: 5 },
   foodItem: { color: '#a1a1aa', fontSize: 14, marginBottom: 4 },
+  textDone: { textDecorationLine: 'line-through', color: '#52525b' },
+  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 15 },
+  shopItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderColor: '#27272a' },
+  shopText: { color: '#d4d4d8', fontSize: 16 },
+  btnPrint: { marginTop: 20, backgroundColor: '#27272a', padding: 15, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
 
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#27272a', paddingTop: 12 },
-  calText: { color: '#3b82f6', fontSize: 12, fontWeight: 'bold' },
-  checkButton: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#3b82f6' },
-  checkButtonActive: { backgroundColor: '#3b82f6' },
-  checkText: { fontSize: 12, fontWeight: 'bold', color: '#3b82f6' },
-  checkTextActive: { color: '#fff' },
-
-  finishButton: { backgroundColor: '#fff', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 10 },
-  finishButtonText: { color: '#000', fontWeight: 'bold', fontSize: 16 }
+  // GRÁFICOS
+  chartSection: { alignItems: 'center', backgroundColor: '#18181b', borderRadius: 20, padding: 20, borderColor: '#27272a', borderWidth: 1 },
+  chartWrapper: { alignItems: 'center', marginBottom: 20, marginTop: 20 },
+  
+  // Detalhes em Grid
+  detailsGrid: { flexDirection: 'row', gap: 10, width: '100%' },
+  detailCard: { flex: 1, backgroundColor: '#09090b', padding: 10, borderRadius: 12, borderWidth: 1, alignItems: 'center' },
+  detailValue: { fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
+  detailLabel: { color: '#a1a1aa', fontSize: 12 }
 });
