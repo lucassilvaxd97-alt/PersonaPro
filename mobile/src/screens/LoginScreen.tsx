@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; // <--- O segredo tá aqui!
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -8,22 +8,84 @@ import {
   KeyboardAvoidingView, 
   Platform,
   StatusBar,
-  Alert 
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
+// Importe o serviço do Supabase
+import { supabase } from '../services/supabase'; 
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [userType, setUserType] = useState<'student' | 'trainer'>('student');
+  const [loading, setLoading] = useState(false);
 
- const handleLogin = () => {
-  if (email === '' || password === '') {
-    Alert.alert("Atenção", "Preencha todos os campos!");
-    return;
-  }
-  // Agora 'MainTabs' existe no App.tsx!
-  navigation.navigate('MainTabs'); 
-};
+  const handleLogin = async () => {
+    // 1. Validação Básica
+    if (email === '' || password === '') {
+      Alert.alert("Campos Vazios", "Por favor, digite seu e-mail e senha.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // 2. Tenta Logar no Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (error) {
+        setLoading(false);
+        Alert.alert("Erro no Login", "E-mail ou senha incorretos.");
+        return;
+      }
+
+      // 3. Se logou, verifica o Perfil (Role) no Banco de Dados
+      if (data.user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError) {
+          setLoading(false);
+          Alert.alert("Erro de Perfil", "Usuário encontrado, mas sem perfil definido.");
+          return;
+        }
+
+        const realRole = profile.role || 'student'; // Se não tiver role, assume aluno
+
+        // 4. Verifica se ele escolheu o botão certo no topo
+        if (userType !== realRole) {
+          setLoading(false);
+          Alert.alert(
+            "Acesso Incorreto", 
+            `Este login pertence a um ${realRole === 'trainer' ? 'TREINADOR' : 'ALUNO'}. Troque a opção no topo!`
+          );
+          await supabase.auth.signOut(); // Desloga por segurança
+          return;
+        }
+
+        // 5. Redireciona para a tela certa
+        setLoading(false);
+        if (realRole === 'trainer') {
+          navigation.replace('TrainerTabs');
+        } else {
+          navigation.replace('MainTabs');
+        }
+      }
+
+    } catch (e) {
+      setLoading(false);
+      Alert.alert("Erro Fatal", "Ocorreu um erro inesperado. Tente novamente.");
+      console.error(e);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -35,25 +97,57 @@ export default function LoginScreen({ navigation }: any) {
       >
         <View style={styles.content}>
           
-          {/* 1. Área da Logo/Ícone */}
+          {/* 1. LOGO IRONPRO */}
           <View style={styles.logoArea}>
-            <View style={styles.iconCircle}>
-              <Ionicons name="fitness" size={50} color="#3b82f6" />
+            <View style={styles.logoBox}>
+               <View style={styles.logoIconRow}>
+                  <Ionicons name="barbell" size={40} color="#fff" style={styles.iconBack} />
+                  <Ionicons name="flash" size={28} color="#3b82f6" style={styles.iconFront} />
+               </View>
             </View>
-            <Text style={styles.appName}>PersonaPro</Text>
-            <Text style={styles.appTagline}>Área do Aluno</Text>
+            <Text style={styles.appName}>IRON<Text style={styles.brandSuffix}>PRO</Text></Text>
           </View>
 
-          {/* 2. Formulário */}
+          {/* 2. SELETOR DE PERFIL (TOGGLE) */}
+          <View style={styles.toggleContainer}>
+            <TouchableOpacity 
+              style={[styles.toggleButton, userType === 'student' && styles.toggleActive]}
+              onPress={() => setUserType('student')}
+              activeOpacity={0.9}
+            >
+              <Ionicons 
+                name="person" 
+                size={16} 
+                color={userType === 'student' ? '#fff' : '#71717a'} 
+              />
+              <Text style={[styles.toggleText, userType === 'student' && styles.textActive]}>SOU ALUNO</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.toggleButton, userType === 'trainer' && styles.toggleActive]}
+              onPress={() => setUserType('trainer')}
+              activeOpacity={0.9}
+            >
+              <Ionicons 
+                name="fitness" 
+                size={16} 
+                color={userType === 'trainer' ? '#fff' : '#71717a'} 
+              />
+              <Text style={[styles.toggleText, userType === 'trainer' && styles.textActive]}>SOU PERSONAL</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 3. FORMULÁRIO */}
           <View style={styles.form}>
-            
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Usuário ou E-mail</Text>
+              <Text style={styles.label}>
+                {userType === 'student' ? 'E-mail do Aluno' : 'E-mail Corporativo'}
+              </Text>
               <View style={styles.inputWrapper}>
-                <Ionicons name="person-outline" size={20} color="#52525b" style={styles.inputIcon} />
+                <Ionicons name="mail-outline" size={20} color="#52525b" style={styles.inputIcon} />
                 <TextInput 
                   style={styles.input}
-                  placeholder="Seu acesso fornecido pelo personal"
+                  placeholder={userType === 'student' ? "ex: aluno@ironpro.com" : "ex: admin@ironpro.com"}
                   placeholderTextColor="#52525b"
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -64,7 +158,7 @@ export default function LoginScreen({ navigation }: any) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Senha Provisória / Pessoal</Text>
+              <Text style={styles.label}>Senha</Text>
               <View style={styles.inputWrapper}>
                 <Ionicons name="lock-closed-outline" size={20} color="#52525b" style={styles.inputIcon} />
                 <TextInput 
@@ -78,24 +172,43 @@ export default function LoginScreen({ navigation }: any) {
               </View>
             </View>
 
-            {/* 3. Botão de Ação Principal */}
+            {/* BOTÃO DE AÇÃO COM LOADING */}
             <TouchableOpacity 
-              style={styles.loginButton}
+              style={[
+                styles.loginButton, 
+                userType === 'trainer' && styles.loginButtonTrainer, 
+                loading && styles.loginButtonDisabled
+              ]}
               onPress={handleLogin}
               activeOpacity={0.8}
+              disabled={loading}
             >
-              <Text style={styles.loginButtonText}>ENTRAR NO SISTEMA</Text>
-              <Ionicons name="arrow-forward" size={20} color="#fff" />
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.loginButtonText}>
+                    {userType === 'student' ? 'ACESSAR TREINOS' : 'ACESSAR PAINEL'}
+                  </Text>
+                  <Ionicons name="arrow-forward" size={20} color="#fff" />
+                </>
+              )}
             </TouchableOpacity>
 
-            {/* 4. Ações Secundárias */}
+            {/* LINKS SECUNDÁRIOS */}
             <TouchableOpacity style={styles.forgotButton}>
               <Text style={styles.forgotText}>Esqueci minha senha</Text>
             </TouchableOpacity>
 
+            {/* LINK PARA CADASTRO (SIGN UP) */}
             <View style={styles.divider}>
-              <Text style={styles.dividerText}>Ainda não tem acesso?</Text>
-              <Text style={styles.helperText}>Peça o cadastro ao seu Personal Trainer.</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('SignUp')} style={{padding: 10}}>
+                <Text style={styles.helperText}>
+                  {userType === 'student' 
+                    ? 'Ainda não tem conta? Toque aqui para criar.' 
+                    : 'Quer ser um Treinador IRONPRO? Cadastre-se aqui.'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
           </View>
@@ -106,124 +219,85 @@ export default function LoginScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#000000', // Preto absoluto para fundo
+  container: { flex: 1, backgroundColor: '#000000' },
+  keyboardView: { flex: 1, justifyContent: 'center' },
+  content: { padding: 24, width: '100%' },
+  
+  // LOGO
+  logoArea: { alignItems: 'center', marginBottom: 30 },
+  logoBox: {
+    width: 70, height: 70, borderRadius: 14, backgroundColor: '#09090b',
+    borderWidth: 1.5, borderColor: '#3b82f6', justifyContent: 'center', alignItems: 'center',
+    marginBottom: 10, shadowColor: '#3b82f6', shadowOpacity: 0.4, elevation: 8
   },
-  keyboardView: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  content: {
-    padding: 24,
-    width: '100%',
-  },
-  logoArea: {
-    alignItems: 'center',
-    marginBottom: 50,
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(59, 130, 246, 0.1)', // Azul bem fraquinho no fundo
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
+  logoIconRow: { position: 'relative', width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  iconBack: { transform: [{ rotate: '-45deg' }], opacity: 0.9 },
+  iconFront: { position: 'absolute', bottom: 0, right: 0 },
+  appName: { fontSize: 32, fontWeight: '900', color: '#fff', fontStyle: 'italic', letterSpacing: 1 },
+  brandSuffix: { color: '#3b82f6' },
+
+  // TOGGLE
+  toggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#18181b',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 30,
     borderWidth: 1,
-    borderColor: '#3b82f6', // Borda Azul Neon
+    borderColor: '#27272a'
   },
-  appName: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    letterSpacing: 1,
-  },
-  appTagline: {
-    fontSize: 16,
-    color: '#3b82f6', // Texto Azul
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  form: {
-    width: '100%',
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    color: '#e4e4e7',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  inputWrapper: {
+  toggleButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#18181b', // Cinza muito escuro
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#27272a',
-  },
-  inputIcon: {
-    marginLeft: 16,
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    color: '#fff',
-    paddingVertical: 16,
-    paddingRight: 16,
-    fontSize: 16,
-  },
-  loginButton: {
-    backgroundColor: '#3b82f6', // AZUL TECH (Primary)
-    flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 18,
-    borderRadius: 12,
-    marginTop: 10,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
   },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  toggleActive: {
+    backgroundColor: '#27272a',
+    borderWidth: 1,
+    borderColor: '#3f3f46'
+  },
+  toggleText: {
+    color: '#71717a',
     fontWeight: 'bold',
-    marginRight: 8,
-    letterSpacing: 0.5,
-  },
-  forgotButton: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  forgotText: {
-    color: '#a1a1aa',
-    fontSize: 14,
-  },
-  divider: {
-    marginTop: 40,
-    alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#27272a',
-    paddingTop: 20,
-  },
-  dividerText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  helperText: {
-    color: '#52525b',
     fontSize: 12,
   },
-});
+  textActive: {
+    color: '#fff',
+  },
 
-function alert(arg0: string) {
-  throw new Error('Function not implemented.');
-}
+  // FORM
+  form: { width: '100%' },
+  inputGroup: { marginBottom: 20 },
+  label: { color: '#e4e4e7', fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
+  inputWrapper: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#18181b',
+    borderRadius: 12, borderWidth: 1, borderColor: '#27272a',
+  },
+  inputIcon: { marginLeft: 16, marginRight: 8 },
+  input: { flex: 1, color: '#fff', paddingVertical: 16, paddingRight: 16, fontSize: 16 },
+  
+  loginButton: {
+    backgroundColor: '#3b82f6', // Azul (Aluno)
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
+    paddingVertical: 18, borderRadius: 12, marginTop: 10,
+    shadowColor: '#3b82f6', shadowOpacity: 0.3, elevation: 6,
+  },
+  loginButtonTrainer: {
+    backgroundColor: '#4f46e5', // Roxo (Trainer)
+    shadowColor: '#4f46e5',
+  },
+  loginButtonDisabled: {
+    opacity: 0.7,
+  },
+  loginButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginRight: 8, letterSpacing: 0.5 },
+  
+  forgotButton: { marginTop: 20, alignItems: 'center' },
+  forgotText: { color: '#a1a1aa', fontSize: 14 },
+  
+  divider: { marginTop: 30, alignItems: 'center', borderTopWidth: 1, borderTopColor: '#27272a', paddingTop: 20 },
+  helperText: { color: '#3b82f6', fontSize: 14, fontWeight: '600', textAlign: 'center' }, // Link destacado
+});

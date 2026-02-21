@@ -15,34 +15,38 @@ const { width } = Dimensions.get('window');
 export default function SplashScreen({ navigation }: any) {
   const [podeEntrar, setPodeEntrar] = useState(false);
 
-  // Valores animados
+  // Animações
   const fadeAnim = useRef(new Animated.Value(0)).current;  
-  const scaleAnim = useRef(new Animated.Value(1)).current; 
+  const scaleAnim = useRef(new Animated.Value(0.8)).current; 
+  const barAnim = useRef(new Animated.Value(0)).current; 
 
   useEffect(() => {
     // 1. Entrada Triunfal
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true,
+      })
+    ]).start();
 
-    // 2. Loop do Coração (Batida)
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(scaleAnim, { toValue: 1.15, duration: 150, useNativeDriver: true }), // Tum...
-        Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),    // ...volta
-        Animated.delay(100),
-        Animated.timing(scaleAnim, { toValue: 1.15, duration: 150, useNativeDriver: true }), // Tum...
-        Animated.timing(scaleAnim, { toValue: 1, duration: 150, useNativeDriver: true }),    // ...volta
-        Animated.delay(1200), // Pausa dramática
-      ])
-    ).start();
+    // 2. Barra de Carregamento Fake (Enche em 2.5s)
+    Animated.timing(barAnim, {
+      toValue: 1, 
+      duration: 2500,
+      useNativeDriver: false, 
+    }).start();
 
     // 3. Libera o clique
     const timer = setTimeout(() => {
       setPodeEntrar(true);
-    }, 1500); // 1.5s para garantir que ele viu a marca
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, []);
@@ -53,45 +57,58 @@ export default function SplashScreen({ navigation }: any) {
     }
   };
 
+  // Interpolação da largura da barra (0% -> 100%)
+  const widthInterpolated = barAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%']
+  });
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       
-      {/* Área clicável gigante para facilitar */}
       <TouchableOpacity 
-        activeOpacity={0.9} 
+        activeOpacity={1} 
         onPress={handlePress}
         style={styles.touchableArea}
       >
-        <Animated.View 
-          style={{ 
-            opacity: fadeAnim, 
-            alignItems: 'center',
-            transform: [{ scale: scaleAnim }] 
-          }}
-        >
-          {/* O Ícone Pulsante */}
-          <View style={styles.iconCircle}>
-            <Ionicons name="fitness" size={90} color="#3b82f6" />
-          </View>
-        </Animated.View>
-
-        {/* Textos (Fora da escala para não tremer, mas com Fade) */}
-        <Animated.View style={{ opacity: fadeAnim, alignItems: 'center', marginTop: 40 }}>
+        <Animated.View style={{ opacity: fadeAnim, alignItems: 'center', transform: [{ scale: scaleAnim }] }}>
           
-          {/* TÍTULO NEON */}
-          <Text style={styles.title}>PersonaPro</Text>
-          
-          {/* SUBTÍTULO ESPAÇADO */}
-          <Text style={styles.subtitle}>Sua evolução começa aqui</Text>
-
-          {/* Dica visual discreta */}
-          <View style={[styles.hintContainer, { opacity: podeEntrar ? 1 : 0 }]}>
-            <Text style={styles.hintText}>Toque para iniciar</Text>
-            <Ionicons name="chevron-forward" size={14} color="#52525b" />
+          {/* LOGO BOX - ÍCONE DE FORÇA */}
+          <View style={styles.logoBox}>
+            <View style={styles.logoIconRow}>
+              {/* Haltere inclinado para dar movimento */}
+              <Ionicons name="barbell" size={60} color="#fff" style={styles.iconBack} />
+              {/* Raio azul indicando energia/pro */}
+              <Ionicons name="flash" size={40} color="#3b82f6" style={styles.iconFront} />
+            </View>
           </View>
 
+          {/* NOME DA MARCA ATUALIZADO */}
+          <Text style={styles.brandName}>IRON<Text style={styles.brandSuffix}>PRO</Text></Text>
+          <Text style={styles.tagline}>PROFESSIONAL TRAINING</Text>
+
         </Animated.View>
+
+        {/* BARRA DE PROGRESSO */}
+        <View style={styles.loadingContainer}>
+          {/* Fundo da barra */}
+          <View style={styles.progressBarBg}>
+            {/* Preenchimento animado */}
+            <Animated.View 
+              style={[
+                styles.progressBarFill, 
+                { width: widthInterpolated }
+              ]} 
+            />
+          </View>
+          
+          {/* Texto de Status */}
+          <Text style={styles.loadingText}>
+            {podeEntrar ? "TAP TO START" : "SYSTEM LOADING..."}
+          </Text>
+        </View>
+
       </TouchableOpacity>
     </View>
   );
@@ -100,7 +117,7 @@ export default function SplashScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000', // Preto Absoluto
+    backgroundColor: '#000', // Preto Puro
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -109,51 +126,90 @@ const styles = StyleSheet.create({
     width: width,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 40
   },
-  iconCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: 'rgba(9, 9, 11, 1)', // Fundo quase preto
+  
+  // --- ESTILO DO LOGO ---
+  logoBox: {
+    width: 120,
+    height: 120,
+    borderRadius: 24, // Quadrado arredondado (App Icon style)
+    backgroundColor: '#09090b', // Cinza muito escuro
+    borderWidth: 2,
+    borderColor: '#3b82f6', // Borda Azul Neon
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#3b82f6', 
-    // Efeito Neon Global
+    marginBottom: 15,
+    // Glow Neon
     shadowColor: '#3b82f6',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 30, 
-    elevation: 20,
+    shadowOpacity: 0.5,
+    shadowRadius: 25,
+    elevation: 10,
   },
-  title: {
-    fontSize: 48,
+  logoIconRow: {
+    position: 'relative',
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconBack: {
+    transform: [{ rotate: '-45deg' }], 
+    opacity: 0.9
+  },
+  iconFront: {
+    position: 'absolute',
+    bottom: 5,
+    right: 10,
+    textShadowColor: 'rgba(0,0,0,1)', // Sombra preta para destacar o raio
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
+  },
+
+  // --- TIPOGRAFIA ---
+  brandName: {
+    fontSize: 48, // Aumentei um pouco
     fontWeight: '900', // Extra Bold
     color: '#fff',
     letterSpacing: 1,
-    // Sombra Neon no Texto
-    textShadowColor: 'rgba(59, 130, 246, 0.5)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
-    marginBottom: 10,
+    fontStyle: 'italic', // Itálico = Velocidade
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#3b82f6', // Azul Tech
+  brandSuffix: {
+    color: '#3b82f6', // "PRO" em Azul
+  },
+  tagline: {
+    color: '#52525b', // Cinza escuro
+    fontSize: 10,
+    letterSpacing: 4, // Espaçamento cinematográfico
+    marginTop: 5,
     fontWeight: 'bold',
-    letterSpacing: 4, // Espaçamento estilo cinema
-    textTransform: 'uppercase',
   },
-  hintContainer: {
-    marginTop: 60,
-    flexDirection: 'row',
+
+  // --- BARRA DE LOADING ---
+  loadingContainer: {
+    position: 'absolute',
+    bottom: 80,
+    width: '100%',
     alignItems: 'center',
-    gap: 5,
   },
-  hintText: {
-    color: '#52525b',
+  progressBarBg: {
+    width: 180,
+    height: 4,
+    backgroundColor: '#27272a', // Trilho cinza escuro
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#3b82f6', // Enchimento Azul
+  },
+  loadingText: {
+    color: '#3b82f6',
     fontSize: 12,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
+    fontWeight: 'bold',
+    letterSpacing: 1.5,
+    opacity: 0.9
   }
 });

@@ -1,13 +1,16 @@
 import 'react-native-url-polyfill/auto';
-import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
-// Read from Expo `extra` (app.config.js) or process.env fallback (for other setups)
-const supabaseUrl = Constants.expoConfig?.extra?.SUPABASE_URL ?? process.env.SUPABASE_URL;
-const supabaseAnonKey = Constants.expoConfig?.extra?.SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY — add them to a .env file or to expo config.');
-}
+const supabaseUrl = 'https://cbzkibbgwfyxrupzhvla.supabase.co'; 
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNiemtpYmJnd2Z5eHJ1cHpodmxhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMzkzMTksImV4cCI6MjA4NjkxNTMxOX0.Lt7LBw012gn4J-9587aZPF8xqCyMmY4MVukcxHtXI8k';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: AsyncStorage, 
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+});

@@ -2,18 +2,30 @@ import React from 'react';
 import { View, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack'; // ESTE AQUI
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 
 // --- IMPORTANDO AS TELAS ---
-import LoginScreen from './src/screens/LoginScreen'; // <--- Sua tela de login
+import LoginScreen from './src/screens/LoginScreen'; 
 import HomeScreen from './src/screens/HomeScreen'; 
 import TreinoScreen from './src/screens/TreinoScreen';
 import DietaScreen from './src/screens/DietaScreen';
 import AvatarScreen from './src/screens/AvatarScreen';
 import PerfilScreen from './src/screens/PerfilScreen';
 import SplashScreen from './src/screens/SplashScreen';
+import TrainerHomeScreen from './src/screens/TrainerHomeScreen';
+import TrainerTabs from './src/navigation/TrainerTabs';
+import SignUpScreen from './src/screens/SignUpScreen';
+import TemplateEditorScreen from './src/screens/TemplateEditorScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
+import TrainerStudentsScreen from './src/screens/TrainerStudentsScreen';
+import TrainerAddStudentScreen from './src/screens/TrainerAddStudentScreen';
+import TrainerStudentDetailScreen from './src/screens/TrainerStudentDetailScreen';
+import TrainerDietLibraryScreen from './src/screens/TrainerDietLibraryScreen';
+import TrainerDietEditorScreen from './src/screens/TrainerDietEditorScreen';
+
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -58,6 +70,7 @@ function TabNavigator() {
       <Tab.Screen name="Dieta" component={DietaScreen} />
       <Tab.Screen name="Evolução" component={AvatarScreen} />
       <Tab.Screen name="Perfil" component={PerfilScreen} />
+     
     </Tab.Navigator>
   );
 }
@@ -76,10 +89,21 @@ export default function App() {
         
         {/* Tela 2: Login */}
         <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
+        <Stack.Screen name="TrainerTabs" component={TrainerTabs} />
         
         {/* Tela 3: App Principal */}
         <Stack.Screen name="MainTabs" component={TabNavigator} />
-
+        <Stack.Screen name="TemplateEditor" component={TemplateEditorScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="Alunos" component={TrainerStudentsScreen} />
+        <Stack.Screen name="TrainerDietEditor" component={TrainerDietEditorScreen} />
+        <Stack.Screen name="TrainerStudentDetail" component={TrainerStudentDetailScreen} options={{ headerShown: false }} />
+        
+        {/* 🚀 A Tela de Treino do Aluno fica salva aqui na rota principal! */}
+        
+        
       </Stack.Navigator>
     </NavigationContainer>
   );
