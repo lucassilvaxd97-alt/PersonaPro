@@ -31,16 +31,17 @@ export default function TreinoScreen({ navigation }: any) {
   const [abaAtiva, setAbaAtiva] = useState<TipoTreino>('A');
   const [todosTreinos, setTodosTreinos] = useState<any>({});
   
-  // --- CONTROLE DE TEMPO (Sem Bloqueio) ---
+  // --- CONTROLE DE TEMPO E BLOQUEIO ---
   const [workoutStarted, setWorkoutStarted] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0); 
 
-  // --- ESTADOS DE VÍDEO E TIMER ---
+  // --- ESTADOS DE VÍDEO, TIMER E DROPDOWN ---
   const [activeTimerId, setActiveTimerId] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentVideoId, setCurrentVideoId] = useState<string>("");
   const [playing, setPlaying] = useState(false);
+  const [dropdownVisible, setDropdownVisible] = useState(false); // NOVO ESTADO DO MENU DE TREINOS
 
   // --- 1. BUSCAR DADOS NO BANCO ---
   const fetchWorkout = async () => {
@@ -80,7 +81,6 @@ export default function TreinoScreen({ navigation }: any) {
               carga: ex.carga || "",
               descanso: ex.rest || ex.descanso || 60,
               obs: ex.obs || "",
-              // Garante que pegue o vídeo de qualquer formato que venha do banco
               videoId: ex.videoId || ex.video_url || ex.videoUrl || "", 
               concluido: false
             }));
@@ -88,7 +88,10 @@ export default function TreinoScreen({ navigation }: any) {
         });
 
         setTodosTreinos(formattedData);
-        if (firstAvailableTab) setAbaAtiva(firstAvailableTab);
+        // Só define a primeira aba se ainda não tiver uma selecionada
+        if (firstAvailableTab && !todosTreinos[abaAtiva]) {
+          setAbaAtiva(firstAvailableTab);
+        }
       }
     } catch (error: any) {
       console.log(error.message);
@@ -172,6 +175,15 @@ export default function TreinoScreen({ navigation }: any) {
     if (state === "ended") setPlaying(false);
   }, []);
 
+  // --- PILOTO AUTOMÁTICO PARA O PRÓXIMO TREINO ---
+  const avancarParaProximoTreino = () => {
+    const abas = Object.keys(todosTreinos);
+    const indexAtual = abas.indexOf(abaAtiva as string);
+    // Se chegou no último treino, volta pro primeiro. Se não, vai pro próximo.
+    const proximoIndex = (indexAtual + 1) % abas.length; 
+    setAbaAtiva(abas[proximoIndex]);
+  };
+
   const finalizarTreino = () => {
     const listaAtual = todosTreinos[abaAtiva] || [];
     const faltam = listaAtual.filter((ex: any) => !ex.concluido).length;
@@ -198,9 +210,13 @@ export default function TreinoScreen({ navigation }: any) {
       if (error) throw error;
 
       setWorkoutStarted(false);
-      setElapsedTime(0); // Zera o cronômetro para o próximo treino
-      Alert.alert("Treino Concluído! 🏆", `Cargas salvas e XP enviado ao professor!`, [
-        { text: "Boa!", onPress: () => navigation.navigate('Início') }
+      setElapsedTime(0); 
+      
+      Alert.alert("Treino Concluído! 🏆", `Finalizado em ${formatElapsed(elapsedTime)}.\nXP enviado ao professor!`, [
+        { text: "Boa!", onPress: () => {
+            avancarParaProximoTreino(); // Pula pro próximo treino da lista!
+            navigation.navigate('Início');
+        }}
       ]);
     } catch (error) {
       Alert.alert("Erro", "Falha ao enviar XP.");
@@ -227,7 +243,7 @@ export default function TreinoScreen({ navigation }: any) {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       
-      {/* HEADER ORIGINAL */}
+      {/* HEADER */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Minha Ficha</Text>
         <Text style={styles.headerSubtitle}>
@@ -235,24 +251,16 @@ export default function TreinoScreen({ navigation }: any) {
         </Text>
       </View>
 
-      {/* ABAS ORIGINAIS */}
-      <View style={styles.tabContainer}>
-        {abasDisponiveis.map((letra) => (
-          <TouchableOpacity 
-            key={letra} 
-            style={[styles.tabButton, abaAtiva === letra && styles.tabActive]}
-            onPress={() => setAbaAtiva(letra)}
-          >
-            <Text style={[styles.tabText, abaAtiva === letra && styles.tabTextActive]}>{letra}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         
-        <View style={styles.workoutHeader}>
-           <Text style={styles.workoutLabel}>TREINO {abaAtiva} <Text style={{color: '#a1a1aa', fontWeight: 'normal'}}>• Foco do Dia</Text></Text>
-        </View>
+        {/* NOVO SELETOR DE TREINOS (DROPDOWN BAR) */}
+        <TouchableOpacity style={styles.workoutSelector} onPress={() => setDropdownVisible(true)}>
+          <View>
+            <Text style={styles.workoutLabel}>Ficha Atual</Text>
+            <Text style={styles.workoutSelectorTitle}>TREINO {abaAtiva} <Text style={{color: '#a1a1aa', fontWeight: 'normal'}}>• Foco do Dia</Text></Text>
+          </View>
+          <Ionicons name="chevron-down-circle" size={32} color="#3b82f6" />
+        </TouchableOpacity>
 
         {/* INICIAR TREINO */}
         {!workoutStarted && (
@@ -264,14 +272,13 @@ export default function TreinoScreen({ navigation }: any) {
           </View>
         )}
 
-        {/* LISTA ORIGINAL */}
+        {/* LISTA DE EXERCÍCIOS */}
         {exerciciosAtuais.map((ex: any) => (
           <View key={ex.id} style={[styles.card, ex.concluido && styles.cardConcluido, !workoutStarted && {opacity: 0.6}]}>
             <View style={styles.cardHeader}>
               <Text style={[styles.exNome, ex.concluido && styles.textConcluido]}>{ex.nome}</Text>
               
               <View style={{flexDirection: 'row', gap: 10}}>
-                {/* BOTÃO DO YOUTUBE VOLTOU COM FORÇA TOTAL */}
                 {ex.videoId ? (
                   <TouchableOpacity onPress={() => openVideo(ex.videoId)}>
                     <Ionicons name="play-circle" size={28} color="#ef4444" />
@@ -333,7 +340,6 @@ export default function TreinoScreen({ navigation }: any) {
           </View>
         ))}
 
-        {/* BOTÃO FINALIZAR ORIGINAL */}
         {workoutStarted && (
           <TouchableOpacity style={styles.finishButton} onPress={finalizarTreino}>
             {sendingXP ? <ActivityIndicator color="#000" /> : <Text style={styles.finishButtonText}>FINALIZAR TREINO</Text>}
@@ -343,13 +349,32 @@ export default function TreinoScreen({ navigation }: any) {
         <View style={{height: 40}} />
       </ScrollView>
 
+      {/* NOVO MODAL: SELETOR DE TREINOS */}
+      <Modal visible={dropdownVisible} transparent animationType="fade">
+        <TouchableOpacity style={styles.dropdownOverlay} activeOpacity={1} onPress={() => setDropdownVisible(false)}>
+          <View style={styles.dropdownContent}>
+            <Text style={styles.dropdownTitle}>Escolha o Treino</Text>
+            {abasDisponiveis.map((aba) => (
+              <TouchableOpacity 
+                key={aba} 
+                style={[styles.dropdownItem, abaAtiva === aba && styles.dropdownItemActive]}
+                onPress={() => {
+                  setAbaAtiva(aba);
+                  setDropdownVisible(false);
+                }}
+              >
+                <Text style={[styles.dropdownItemText, abaAtiva === aba && {color: '#3b82f6', fontWeight: 'bold'}]}>
+                  Treino {aba}
+                </Text>
+                {abaAtiva === aba && <Ionicons name="checkmark" size={20} color="#3b82f6" />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       {/* MODAL DO VÍDEO YOUTUBE */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => { setModalVisible(false); setPlaying(false); }}
-      >
+      <Modal animationType="fade" transparent={true} visible={modalVisible} onRequestClose={() => { setModalVisible(false); setPlaying(false); }}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -358,16 +383,8 @@ export default function TreinoScreen({ navigation }: any) {
                 <Ionicons name="close-circle" size={30} color="#fff" />
               </TouchableOpacity>
             </View>
-
             <View style={styles.videoWrapper}>
-              <YoutubePlayer
-                height={220}
-                width={width - 60}
-                play={playing}
-                videoId={currentVideoId}
-                onChangeState={onStateChange}
-                initialPlayerParams={{ rel: false, modestbranding: true }}
-              />
+              <YoutubePlayer height={220} width={width - 60} play={playing} videoId={currentVideoId} onChangeState={onStateChange} initialPlayerParams={{ rel: false, modestbranding: true }} />
             </View>
           </View>
         </View>
@@ -377,21 +394,27 @@ export default function TreinoScreen({ navigation }: any) {
   );
 }
 
-// STYLESHEET ORIGINAL INTACTO
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   loadingBox: { flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
   header: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 15, backgroundColor: '#000' },
   headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#fff' },
   headerSubtitle: { fontSize: 14, color: '#a1a1aa' },
-  tabContainer: { flexDirection: 'row', paddingHorizontal: 20, marginBottom: 10, gap: 10 },
-  tabButton: { flex: 1, paddingVertical: 10, backgroundColor: '#18181b', borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#27272a' },
-  tabActive: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
-  tabText: { color: '#a1a1aa', fontWeight: 'bold', fontSize: 14 },
-  tabTextActive: { color: '#fff' },
   list: { padding: 20 },
-  workoutHeader: { marginBottom: 20 },
-  workoutLabel: { color: '#3b82f6', fontSize: 14, fontWeight: 'bold' },
+  
+  // --- NOVO ESTILO DO SELETOR (BARRA DROPDOWN) ---
+  workoutSelector: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#18181b', padding: 15, borderRadius: 16, borderWidth: 1, borderColor: '#27272a', marginBottom: 20 },
+  workoutLabel: { color: '#3b82f6', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 },
+  workoutSelectorTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+
+  // --- MODAL DO DROPDOWN ---
+  dropdownOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 },
+  dropdownContent: { backgroundColor: '#18181b', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#27272a' },
+  dropdownTitle: { color: '#a1a1aa', fontSize: 14, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
+  dropdownItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#27272a' },
+  dropdownItemActive: { borderBottomColor: '#3b82f6' },
+  dropdownItemText: { color: '#fff', fontSize: 16 },
+
   card: { backgroundColor: '#18181b', borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#27272a' },
   cardConcluido: { opacity: 0.6, borderColor: '#3b82f6' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
@@ -417,14 +440,12 @@ const styles = StyleSheet.create({
   finishButton: { marginTop: 10, backgroundColor: '#fff', padding: 16, borderRadius: 12, alignItems: 'center' },
   finishButtonText: { fontWeight: 'bold', fontSize: 16, color: '#000' },
   
-  // MODAL
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { width: '90%', backgroundColor: '#18181b', borderRadius: 20, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#27272a' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 20, alignItems: 'center' },
   modalTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   videoWrapper: { overflow: 'hidden', borderRadius: 12, backgroundColor: '#000' },
 
-  // Botão de iniciar treino
   startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#10b981', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#059669' },
   startBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16, marginLeft: 8 },
 });

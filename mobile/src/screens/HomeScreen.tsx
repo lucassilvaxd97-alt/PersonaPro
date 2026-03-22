@@ -150,7 +150,7 @@ export default function HomeScreen() {
         </View>
 
         {/* 3. HERO CARD: TREINO DO DIA (LINCADO COM BANCO) */}
-        <Text style={styles.sectionTitle}>Treino de Hoje</Text>
+        <Text style={styles.sectionTitle}>{resumoDia.treinoFeito ? "Missão Cumprida 🏆" : "Treino de Hoje"}</Text>
         <TouchableOpacity style={styles.heroCard} activeOpacity={0.9} onPress={irParaTreino}>
           <LinearGradient
             colors={resumoDia.treinoFeito ? ['#064e3b', '#065f46'] : ['#1e3a8a', '#172554']}
@@ -159,19 +159,22 @@ export default function HomeScreen() {
           >
             <View style={styles.heroHeader}>
               <View style={[styles.tagTreino, resumoDia.treinoFeito && {backgroundColor: '#10b981'}]}>
-                <Text style={styles.tagText}>FICHA ATUAL</Text>
+                <Text style={styles.tagText}>{resumoDia.treinoFeito ? 'DESCANSO ATIVO' : 'FICHA ATUAL'}</Text>
               </View>
               <View style={styles.timeTag}>
-                <Ionicons name="barbell-outline" size={14} color="#bfdbfe" />
+                <Ionicons name={resumoDia.treinoFeito ? "battery-charging-outline" : "barbell-outline"} size={14} color="#bfdbfe" />
                 <Text style={styles.timeText}>O Protocolo</Text>
               </View>
             </View>
 
-            <Text style={styles.heroTitle} numberOfLines={1}>{resumoDia.treinoNome}</Text>
+            {/* SE O TREINO ESTIVER FEITO, MUDA O TÍTULO PARA O PRÓXIMO PASSO */}
+            <Text style={styles.heroTitle} numberOfLines={1}>
+              {resumoDia.treinoFeito ? "Próximo Treino Amanhã" : resumoDia.treinoNome}
+            </Text>
             
             <View style={styles.heroFooter}>
               <Text style={[styles.heroStatus, resumoDia.treinoFeito && {color: '#6ee7b7'}]}>
-                {resumoDia.treinoFeito ? "Treino Computado ✅" : "Toque para Iniciar ▶"}
+                {resumoDia.treinoFeito ? "Músculo em construção... ⏳" : "Toque para Iniciar ▶"}
               </Text>
               {!resumoDia.treinoFeito && (
                 <Ionicons name="arrow-forward-circle" size={32} color="#fff" />

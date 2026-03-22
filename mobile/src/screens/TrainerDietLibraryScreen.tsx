@@ -125,14 +125,15 @@ export default function TrainerDietLibraryScreen({ navigation }: any) {
             </View>
           }
           renderItem={({ item }) => {
-            const mealsObj = item.meals || {};
-            const activeMeals = Object.keys(mealsObj).filter(key => mealsObj[key].length > 0);
+            // Conta as refeições de forma correta (lendo o array JSON que criamos)
+            const activeMealsCount = Array.isArray(item.meals) ? item.meals.length : 0;
 
             return (
               <View style={styles.card}>
                 <TouchableOpacity 
                   style={styles.cardInfo} 
-                  onPress={() => navigation.navigate('TrainerDietEditor', { template: item })}
+                  // 👉 A CORREÇÃO DE OURO ESTÁ AQUI: "diet" em vez de "template"
+                  onPress={() => navigation.navigate('TrainerDietEditor', { diet: item })}
                 >
                   <Text style={styles.cardTitle}>{item.name}</Text>
                   <View style={styles.badgesRow}>
@@ -142,7 +143,7 @@ export default function TrainerDietLibraryScreen({ navigation }: any) {
                     </View>
                     <View style={[styles.badge, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
                       <Text style={[styles.badgeText, { color: '#3b82f6' }]}>
-                        {activeMeals.length} Refeições
+                        {activeMealsCount} Refeições
                       </Text>
                     </View>
                   </View>

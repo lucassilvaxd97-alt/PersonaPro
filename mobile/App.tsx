@@ -25,12 +25,12 @@ import TrainerAddStudentScreen from './src/screens/TrainerAddStudentScreen';
 import TrainerStudentDetailScreen from './src/screens/TrainerStudentDetailScreen';
 import TrainerDietLibraryScreen from './src/screens/TrainerDietLibraryScreen';
 import TrainerDietEditorScreen from './src/screens/TrainerDietEditorScreen';
-
+import RankingScreen from './src/screens/RankingScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-// 1. Criamos o Menu de Abas separadamente
+// 1. MENU DE ABAS DO ALUNO (COM RANKING)
 function TabNavigator() {
   return (
     <Tab.Navigator
@@ -40,17 +40,20 @@ function TabNavigator() {
           backgroundColor: '#09090b',
           borderTopColor: '#27272a',
           borderTopWidth: 1,
-          height: Platform.OS === 'ios' ? 85 : 65,
-          paddingBottom: Platform.OS === 'ios' ? 30 : 10,
+          height: Platform.OS === 'ios' ? 90 : 70,
+          paddingBottom: Platform.OS === 'ios' ? 30 : 12,
           paddingTop: 10,
         },
         tabBarActiveTintColor: '#3b82f6',
         tabBarInactiveTintColor: '#71717a',
+        tabBarLabelStyle: { fontSize: 10, fontWeight: 'bold' },
         tabBarIcon: ({ focused, color }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
+
           if (route.name === 'Início') iconName = focused ? 'home' : 'home-outline';
           else if (route.name === 'Treino') iconName = focused ? 'barbell' : 'barbell-outline';
           else if (route.name === 'Dieta') iconName = focused ? 'nutrition' : 'nutrition-outline';
+          else if (route.name === 'Ranking') iconName = focused ? 'trophy' : 'trophy-outline';
           else if (route.name === 'Evolução') iconName = focused ? 'body' : 'body-outline';
           else if (route.name === 'Perfil') iconName = focused ? 'person' : 'person-outline';
 
@@ -59,7 +62,7 @@ function TabNavigator() {
               shadowColor: focused ? '#3b82f6' : 'transparent',
               shadowOpacity: 0.5, shadowRadius: 5, elevation: focused ? 5 : 0 
             }}>
-              <Ionicons name={iconName} size={24} color={color} />
+              <Ionicons name={iconName} size={22} color={color} />
             </View>
           );
         },
@@ -68,41 +71,37 @@ function TabNavigator() {
       <Tab.Screen name="Início" component={HomeScreen} />
       <Tab.Screen name="Treino" component={TreinoScreen} />
       <Tab.Screen name="Dieta" component={DietaScreen} />
+      <Tab.Screen name="Ranking" component={RankingScreen} />
       <Tab.Screen name="Evolução" component={AvatarScreen} />
       <Tab.Screen name="Perfil" component={PerfilScreen} />
-     
     </Tab.Navigator>
   );
 }
 
-// 2. O App agora gerencia a troca do Login para as Abas
+// 2. STACK PRINCIPAL (GERENCIA LOGIN E ABAS)
 export default function App() {
   return (
     <NavigationContainer>
       <StatusBar style="light" backgroundColor="#000" />
       
-      {/* initialRouteName agora é 'Splash' */}
       <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
         
-        {/* Tela 1: Carregamento */}
+        {/* FLUXO DE AUTENTICAÇÃO E CARREGAMENTO */}
         <Stack.Screen name="Splash" component={SplashScreen} />
-        
-        {/* Tela 2: Login */}
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
-        <Stack.Screen name="TrainerTabs" component={TrainerTabs} />
         
-        {/* Tela 3: App Principal */}
+        {/* FLUXO DO ALUNO */}
         <Stack.Screen name="MainTabs" component={TabNavigator} />
-        <Stack.Screen name="TemplateEditor" component={TemplateEditorScreen} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        
+        {/* FLUXO DO TREINADOR */}
+        <Stack.Screen name="TrainerTabs" component={TrainerTabs} />
         <Stack.Screen name="Alunos" component={TrainerStudentsScreen} />
+        <Stack.Screen name="TemplateEditor" component={TemplateEditorScreen} />
         <Stack.Screen name="TrainerDietEditor" component={TrainerDietEditorScreen} />
-        <Stack.Screen name="TrainerStudentDetail" component={TrainerStudentDetailScreen} options={{ headerShown: false }} />
-        
-        {/* 🚀 A Tela de Treino do Aluno fica salva aqui na rota principal! */}
-        
+        <Stack.Screen name="TrainerStudentDetail" component={TrainerStudentDetailScreen} />
         
       </Stack.Navigator>
     </NavigationContainer>

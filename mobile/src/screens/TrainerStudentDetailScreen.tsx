@@ -12,13 +12,21 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
 
   const [student, setStudent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [templates, setTemplates] = useState<any[]>([]);
   
-  // Controle de Modais
-  const [strategyModalVisible, setStrategyModalVisible] = useState(false);
+  // Listas da Biblioteca do Treinador
+  const [workoutTemplates, setWorkoutTemplates] = useState<any[]>([]);
+  const [dietTemplates, setDietTemplates] = useState<any[]>([]);
+  
+  // Controle de Modais - Treino
+  const [workoutModalVisible, setWorkoutModalVisible] = useState(false);
   const [strategyMode, setStrategyMode] = useState<'selection' | 'template'>('selection');
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
-  const [savingStrategy, setSavingStrategy] = useState(false);
+  const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
+  const [savingWorkout, setSavingWorkout] = useState(false);
+
+  // Controle de Modais - Dieta (NOVO)
+  const [dietModalVisible, setDietModalVisible] = useState(false);
+  const [selectedDiet, setSelectedDiet] = useState<any>(null);
+  const [savingDiet, setSavingDiet] = useState(false);
 
   // --- ESTADOS PARA EDIÇÃO DE PERFIL ---
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -34,6 +42,7 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
   // --- BUSCAR DADOS ---
   const fetchDetails = async () => {
     try {
+      // Busca dados do aluno
       const { data, error } = await supabase
         .from('student_trainer')
         .select(`*, student:profiles!student_id (*)`)
@@ -43,7 +52,6 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
       if (error) throw error;
       setStudent(data);
 
-      // Preenche o formulário com os dados que estão na SUA FICHA (student_trainer)
       setEditForm({
         weight: data.weight?.toString() || '',
         body_fat: data.body_fat?.toString() || '',
@@ -52,12 +60,19 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
         internal_notes: data.internal_notes || ''
       });
 
+      // Busca os Treinos do Professor
       const { data: tmps } = await supabase
         .from('workout_templates')
         .select('id, name')
         .eq('trainer_id', data.trainer_id);
-      
-      setTemplates(tmps || []);
+      setWorkoutTemplates(tmps || []);
+
+      // Busca as Dietas do Professor (NOVO)
+      const { data: diets } = await supabase
+        .from('diet_templates')
+        .select('id, name')
+        .eq('trainer_id', data.trainer_id);
+      setDietTemplates(diets || []);
 
     } catch (error) {
       console.log(error);
@@ -74,8 +89,6 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
   const handleSaveProfile = async () => {
     setSavingProfile(true);
     try {
-      // Salva TUDO direto na tabela de vínculo (onde o professor tem permissão total)
-      // O ".replace(',', '.')" garante que se você digitar 80,5 ele salve direitinho no banco
       const { error } = await supabase.from('student_trainer').update({
         weight: editForm.weight ? parseFloat(editForm.weight.replace(',', '.')) : null,
         body_fat: editForm.body_fat ? parseFloat(editForm.body_fat.replace(',', '.')) : null,
@@ -88,7 +101,7 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
 
       Alert.alert("Sucesso! 🦖", "Dados do aluno atualizados.");
       setEditModalVisible(false);
-      fetchDetails(); // Recarrega a tela para mostrar os dados novos
+      fetchDetails(); 
     } catch (error: any) {
       Alert.alert("Erro ao salvar", error.message);
     } finally {
@@ -96,34 +109,61 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
     }
   };
 
-  // --- AÇÕES DE ESTRATÉGIA ---
-  const handleApplyTemplate = async () => {
-    if (!selectedTemplate) return;
-    setSavingStrategy(true);
+  // --- AÇÕES DE TREINO ---
+  const handleApplyWorkout = async () => {
+    if (!selectedWorkout) return;
+    setSavingWorkout(true);
     try {
-      const { error } = await supabase.from('student_trainer').update({ plan_name: selectedTemplate.name }).eq('student_id', studentId);
+      const { error } = await supabase.from('student_trainer').update({ plan_name: selectedWorkout.name }).eq('student_id', studentId);
       if (error) throw error;
-      Alert.alert("Sucesso!", `Template "${selectedTemplate.name}" aplicado.`);
-      setStrategyModalVisible(false);
+      Alert.alert("Sucesso!", `Treino "${selectedWorkout.name}" aplicado.`);
+      setWorkoutModalVisible(false);
       fetchDetails(); 
-    } catch (error) { Alert.alert("Erro", "Falha ao aplicar template."); } 
-    finally { setSavingStrategy(false); }
+    } catch (error) { Alert.alert("Erro", "Falha ao aplicar treino."); } 
+    finally { setSavingWorkout(false); }
   };
 
-  const handleSetCustom = async () => {
-    setSavingStrategy(true);
+  const handleSetCustomWorkout = async () => {
+    setSavingWorkout(true);
     try {
       const { error } = await supabase.from('student_trainer').update({ plan_name: 'Personalizado' }).eq('student_id', studentId);
       if (error) throw error;
-      Alert.alert("Modo Personalizado", "Agora você pode montar o treino do zero.");
-      setStrategyModalVisible(false);
+      Alert.alert("Modo Personalizado", "Treino definido do zero.");
+      setWorkoutModalVisible(false);
       fetchDetails();
-    } catch (error) { Alert.alert("Erro", "Falha ao definir modo personalizado."); } 
-    finally { setSavingStrategy(false); }
+    } catch (error) { Alert.alert("Erro", "Falha ao definir modo."); } 
+    finally { setSavingWorkout(false); }
+  };
+
+  // --- AÇÕES DE DIETA (NOVO) ---
+  const handleApplyDiet = async () => {
+    if (!selectedDiet) return;
+    setSavingDiet(true);
+    try {
+      // Assumindo que você criou a coluna 'diet_plan_name' na tabela student_trainer
+      const { error } = await supabase.from('student_trainer').update({ diet_plan_name: selectedDiet.name }).eq('student_id', studentId);
+      if (error) throw error;
+      Alert.alert("Sucesso! 🥦", `Dieta "${selectedDiet.name}" enviada ao aluno.`);
+      setDietModalVisible(false);
+      fetchDetails(); 
+    } catch (error: any) { Alert.alert("Erro do Supabase", error.message); }
+    finally { setSavingDiet(false); }
+  };
+
+  const handleSetCustomDiet = async () => {
+    setSavingDiet(true);
+    try {
+      const { error } = await supabase.from('student_trainer').update({ diet_plan_name: 'Personalizada' }).eq('student_id', studentId);
+      if (error) throw error;
+      Alert.alert("Modo Personalizado", "Dieta definida do zero.");
+      setDietModalVisible(false);
+      fetchDetails();
+    } catch (error) { Alert.alert("Erro", "Falha ao definir dieta."); } 
+    finally { setSavingDiet(false); }
   };
 
   const handleUnlink = () => {
-    Alert.alert("Desvincular Aluno", "Tem certeza? Ele perderá o acesso aos seus treinos.", [
+    Alert.alert("Desvincular Aluno", "Tem certeza? Ele perderá o acesso aos treinos.", [
       { text: "Cancelar" },
       { text: "Sim, remover", style: 'destructive', onPress: async () => {
           await supabase.from('student_trainer').delete().eq('student_id', studentId);
@@ -147,8 +187,6 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>FICHA TÉCNICA</Text>
-        
-        {/* BOTÃO DE EDITAR */}
         <TouchableOpacity onPress={() => setEditModalVisible(true)} style={styles.editBtnTop}>
           <Ionicons name="pencil" size={20} color="#fff" />
         </TouchableOpacity>
@@ -169,7 +207,7 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
           </View>
         </View>
 
-        {/* STATS (Puxando de 'student' e não mais de 'profile') */}
+        {/* STATS */}
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
             <Text style={styles.statLabel}>PESO</Text>
@@ -185,7 +223,7 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
           </View>
         </View>
 
-        {/* ALERTA DE RESTRIÇÃO MÉDICA */}
+        {/* ALERTAS */}
         {hasRestriction && (
           <View style={styles.alertBox}>
             <View style={{flexDirection:'row', alignItems:'center', marginBottom: 5}}>
@@ -196,7 +234,6 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
           </View>
         )}
 
-        {/* ANOTAÇÕES SECRETAS */}
         {student.internal_notes ? (
           <View style={styles.notesBox}>
             <View style={{flexDirection:'row', alignItems:'center', marginBottom: 5}}>
@@ -207,14 +244,27 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
           </View>
         ) : null}
 
-        {/* ESTRATÉGIA ATUAL */}
-        <Text style={styles.sectionTitle}>ESTRATÉGIA ATUAL</Text>
+        {/* --- ESTRATÉGIA ATUAL: TREINO E DIETA --- */}
+        <Text style={styles.sectionTitle}>ESTRATÉGIA VIGENTE</Text>
+        
+        {/* CARD DO TREINO */}
         <View style={styles.planCard}>
           <View style={{flex:1}}>
-             <Text style={styles.planLabel}>TREINO VIGENTE</Text>
-             <Text style={styles.planName}>{student.plan_name || 'Nenhum'}</Text>
+             <Text style={styles.planLabel}>PROGRAMA DE TREINO</Text>
+             <Text style={styles.planName}>{student.plan_name || 'Nenhum Treino'}</Text>
           </View>
-          <TouchableOpacity style={styles.changeBtn} onPress={() => { setStrategyMode('selection'); setStrategyModalVisible(true); }}>
+          <TouchableOpacity style={styles.changeBtn} onPress={() => { setStrategyMode('selection'); setWorkoutModalVisible(true); }}>
+             <Text style={styles.changeBtnText}>ALTERAR</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* CARD DA DIETA (NOVO) */}
+        <View style={[styles.planCard, { borderLeftColor: '#10b981', marginTop: -25 }]}>
+          <View style={{flex:1}}>
+             <Text style={styles.planLabel}>PLANO NUTRICIONAL</Text>
+             <Text style={styles.planName}>{student.diet_plan_name || 'Nenhuma Dieta'}</Text>
+          </View>
+          <TouchableOpacity style={styles.changeBtn} onPress={() => { setSelectedDiet(null); setDietModalVisible(true); }}>
              <Text style={styles.changeBtnText}>ALTERAR</Text>
           </TouchableOpacity>
         </View>
@@ -225,18 +275,16 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
 
       </ScrollView>
 
-      {/* --- MODAL DE EDITAR INFORMAÇÕES DO ALUNO --- */}
+      {/* --- MODAL: EDITAR PERFIL --- (Mantido igual) */}
       <Modal visible={editModalVisible} animationType="slide" presentationStyle="pageSheet">
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            
             <View style={styles.modalHeaderRow}>
               <Text style={styles.modalTitle}>Editar Aluno</Text>
               <TouchableOpacity onPress={() => setEditModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#71717a" />
               </TouchableOpacity>
             </View>
-
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.row}>
                 <View style={styles.inputGroup}>
@@ -248,74 +296,103 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
                   <TextInput style={styles.input} keyboardType="numeric" value={editForm.body_fat} onChangeText={t => setEditForm({...editForm, body_fat: t})} placeholder="Ex: 15" placeholderTextColor="#52525b" />
                 </View>
               </View>
-
               <Text style={styles.inputLabel}>Objetivo Principal</Text>
-              <TextInput style={styles.input} value={editForm.objective} onChangeText={t => setEditForm({...editForm, objective: t})} placeholder="Ex: Hipertrofia, Emagrecimento..." placeholderTextColor="#52525b" />
-
-              <Text style={[styles.inputLabel, {color: '#ef4444'}]}>Restrições Médicas / Lesões</Text>
-              <TextInput style={[styles.input, {height: 80, textAlignVertical: 'top'}]} multiline value={editForm.restrictions} onChangeText={t => setEditForm({...editForm, restrictions: t})} placeholder="Ex: Hérnia lombar, evitar sobrecarga axial." placeholderTextColor="#52525b" />
-
-              <Text style={[styles.inputLabel, {color: '#f59e0b'}]}>Anotações Internas (Só você vê 🔒)</Text>
-              <TextInput style={[styles.input, {height: 80, textAlignVertical: 'top', borderColor: '#f59e0b', borderWidth: 1}]} multiline value={editForm.internal_notes} onChangeText={t => setEditForm({...editForm, internal_notes: t})} placeholder="Anotações privadas sobre o aluno..." placeholderTextColor="#52525b" />
-
+              <TextInput style={styles.input} value={editForm.objective} onChangeText={t => setEditForm({...editForm, objective: t})} placeholder="Ex: Hipertrofia..." placeholderTextColor="#52525b" />
+              <Text style={[styles.inputLabel, {color: '#ef4444'}]}>Restrições / Lesões</Text>
+              <TextInput style={[styles.input, {height: 80, textAlignVertical: 'top'}]} multiline value={editForm.restrictions} onChangeText={t => setEditForm({...editForm, restrictions: t})} placeholderTextColor="#52525b" />
+              <Text style={[styles.inputLabel, {color: '#f59e0b'}]}>Anotações Internas (Privado)</Text>
+              <TextInput style={[styles.input, {height: 80, textAlignVertical: 'top', borderColor: '#f59e0b', borderWidth: 1}]} multiline value={editForm.internal_notes} onChangeText={t => setEditForm({...editForm, internal_notes: t})} placeholderTextColor="#52525b" />
               <TouchableOpacity style={styles.confirmBtn} onPress={handleSaveProfile} disabled={savingProfile}>
-                {savingProfile ? <ActivityIndicator color="#fff"/> : <Text style={styles.confirmText}>SALVAR INFORMAÇÕES</Text>}
+                {savingProfile ? <ActivityIndicator color="#fff"/> : <Text style={styles.confirmText}>SALVAR</Text>}
               </TouchableOpacity>
             </ScrollView>
-
           </View>
         </KeyboardAvoidingView>
       </Modal>
 
-      {/* --- MODAL ESTRATÉGIA --- */}
-      <Modal visible={strategyModalVisible} transparent animationType="fade">
+      {/* --- MODAL: ALTERAR TREINO --- */}
+      <Modal visible={workoutModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlayDark}>
           <View style={styles.modalContentBox}>
-            <Text style={styles.modalTitleCenter}>{strategyMode === 'selection' ? 'Alterar Estratégia' : 'Selecionar Template'}</Text>
+            <Text style={styles.modalTitleCenter}>{strategyMode === 'selection' ? 'Novo Treino' : 'Escolher Template'}</Text>
             
             {strategyMode === 'selection' && (
               <View>
                 <Text style={styles.modalSub}>Como você quer definir o novo treino?</Text>
                 <View style={styles.selectionRow}>
-                  <TouchableOpacity style={styles.selectionCard} onPress={handleSetCustom} disabled={savingStrategy}>
+                  <TouchableOpacity style={styles.selectionCard} onPress={handleSetCustomWorkout} disabled={savingWorkout}>
                     <View style={styles.iconCircle}><Ionicons name="construct" size={24} color="#fff" /></View>
                     <Text style={styles.selectionTitle}>Do Zero</Text>
-                    <Text style={styles.selectionDesc}>Personalizado</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity style={styles.selectionCard} onPress={() => setStrategyMode('template')}>
-                    <View style={[styles.iconCircle, {backgroundColor:'#3b82f6'}]}><Ionicons name="copy" size={24} color="#fff" /></View>
+                    <View style={[styles.iconCircle, {backgroundColor:'#3b82f6'}]}><Ionicons name="barbell" size={24} color="#fff" /></View>
                     <Text style={styles.selectionTitle}>Usar Template</Text>
-                    <Text style={styles.selectionDesc}>Sua biblioteca</Text>
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => setStrategyModalVisible(false)}>
-                   <Text style={styles.cancelText}>CANCELAR</Text>
-                </TouchableOpacity>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setWorkoutModalVisible(false)}><Text style={styles.cancelText}>CANCELAR</Text></TouchableOpacity>
               </View>
             )}
 
             {strategyMode === 'template' && (
               <View>
-                <Text style={styles.modalSub}>Escolha um treino da sua biblioteca:</Text>
+                <Text style={styles.modalSub}>Selecione um treino da biblioteca:</Text>
                 <ScrollView style={{maxHeight: 250}}>
-                  {templates.map(t => (
-                    <TouchableOpacity key={t.id} style={[styles.templateOption, selectedTemplate?.id === t.id && styles.templateActive]} onPress={() => setSelectedTemplate(t)}>
-                      <Text style={[styles.templateText, selectedTemplate?.id === t.id && {color: '#fff'}]}>{t.name}</Text>
-                      {selectedTemplate?.id === t.id && <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />}
-                    </TouchableOpacity>
-                  ))}
+                  {workoutTemplates.length === 0 ? (
+                    <Text style={{color:'#71717a', textAlign:'center', marginTop:20}}>Nenhum treino salvo.</Text>
+                  ) : (
+                    workoutTemplates.map(t => (
+                      <TouchableOpacity key={t.id} style={[styles.templateOption, selectedWorkout?.id === t.id && styles.templateActive]} onPress={() => setSelectedWorkout(t)}>
+                        <Text style={[styles.templateText, selectedWorkout?.id === t.id && {color: '#fff'}]}>{t.name}</Text>
+                        {selectedWorkout?.id === t.id && <Ionicons name="checkmark-circle" size={20} color="#3b82f6" />}
+                      </TouchableOpacity>
+                    ))
+                  )}
                 </ScrollView>
                 <View style={styles.modalActions}>
-                  <TouchableOpacity style={styles.backSmallBtn} onPress={() => setStrategyMode('selection')}>
-                    <Ionicons name="arrow-back" size={20} color="#71717a" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.confirmBtnFull, !selectedTemplate && {opacity:0.5}]} onPress={handleApplyTemplate} disabled={!selectedTemplate || savingStrategy}>
-                    {savingStrategy ? <ActivityIndicator color="#fff"/> : <Text style={styles.confirmText}>APLICAR TREINO</Text>}
+                  <TouchableOpacity style={styles.backSmallBtn} onPress={() => setStrategyMode('selection')}><Ionicons name="arrow-back" size={20} color="#71717a" /></TouchableOpacity>
+                  <TouchableOpacity style={[styles.confirmBtnFull, !selectedWorkout && {opacity:0.5}]} onPress={handleApplyWorkout} disabled={!selectedWorkout || savingWorkout}>
+                    {savingWorkout ? <ActivityIndicator color="#fff"/> : <Text style={styles.confirmText}>APLICAR TREINO</Text>}
                   </TouchableOpacity>
                 </View>
               </View>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* --- MODAL: ALTERAR DIETA (NOVO) --- */}
+      <Modal visible={dietModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlayDark}>
+          <View style={styles.modalContentBox}>
+            <Text style={styles.modalTitleCenter}>Vincular Dieta 🥦</Text>
+            <Text style={styles.modalSub}>Escolha um plano nutricional da sua biblioteca para este aluno.</Text>
+            
+            <ScrollView style={{maxHeight: 250, marginBottom: 15}}>
+              {dietTemplates.length === 0 ? (
+                <View style={{alignItems: 'center', marginTop: 20}}>
+                  <Ionicons name="restaurant-outline" size={40} color="#27272a" />
+                  <Text style={{color:'#71717a', textAlign:'center', marginTop:10}}>Você ainda não criou nenhuma dieta.</Text>
+                </View>
+              ) : (
+                dietTemplates.map(d => (
+                  <TouchableOpacity key={d.id} style={[styles.templateOption, selectedDiet?.id === d.id && {borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)'}]} onPress={() => setSelectedDiet(d)}>
+                    <Text style={[styles.templateText, selectedDiet?.id === d.id && {color: '#fff'}]}>{d.name}</Text>
+                    {selectedDiet?.id === d.id && <Ionicons name="checkmark-circle" size={20} color="#10b981" />}
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={[styles.cancelBtn, {flex: 1}]} onPress={() => setDietModalVisible(false)}><Text style={styles.cancelText}>CANCELAR</Text></TouchableOpacity>
+              <TouchableOpacity style={[styles.confirmBtnFull, {backgroundColor: '#10b981'}, (!selectedDiet || dietTemplates.length === 0) && {opacity:0.5}]} onPress={handleApplyDiet} disabled={!selectedDiet || savingDiet}>
+                {savingDiet ? <ActivityIndicator color="#fff"/> : <Text style={styles.confirmText}>APLICAR DIETA</Text>}
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity onPress={handleSetCustomDiet} style={{marginTop: 15}}>
+               <Text style={{color: '#71717a', textAlign: 'center', fontSize: 12, textDecorationLine: 'underline'}}>Ou começar dieta do zero</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -327,12 +404,10 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   loadingBox: { flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
-  
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 20, borderBottomWidth: 1, borderColor: '#18181b' },
   backBtn: { padding: 5 },
   headerTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', letterSpacing: 1 },
   editBtnTop: { padding: 8, backgroundColor: '#27272a', borderRadius: 8 },
-
   profileCard: { flexDirection: 'row', alignItems: 'center', marginBottom: 25 },
   avatar: { width: 70, height: 70, borderRadius: 35, marginRight: 20, borderWidth: 2, borderColor: '#3b82f6' },
   name: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
@@ -340,45 +415,39 @@ const styles = StyleSheet.create({
   statusBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(16, 185, 129, 0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, alignSelf: 'flex-start' },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10b981', marginRight: 6 },
   statusText: { color: '#10b981', fontSize: 10, fontWeight: 'bold' },
-
   statsGrid: { flexDirection: 'row', backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 20, justifyContent: 'space-between' },
   statItem: { flex: 1, alignItems: 'center' },
   statLabel: { color: '#71717a', fontSize: 10, fontWeight: 'bold', marginBottom: 5 },
   statValue: { color: '#fff', fontSize: 16, fontWeight: 'bold', textAlign: 'center' },
-
   alertBox: { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 1, borderColor: '#ef4444', borderRadius: 12, padding: 15, marginBottom: 15 },
   alertTitle: { color: '#ef4444', fontWeight: 'bold', fontSize: 12, marginLeft: 5 },
   alertText: { color: '#fca5a5', fontSize: 14, marginTop: 4 },
-
   notesBox: { backgroundColor: 'rgba(245, 158, 11, 0.1)', borderWidth: 1, borderColor: '#f59e0b', borderRadius: 12, padding: 15, marginBottom: 25 },
   notesTitle: { color: '#f59e0b', fontWeight: 'bold', fontSize: 10, marginLeft: 5, letterSpacing: 1 },
   notesText: { color: '#fcd34d', fontSize: 14, marginTop: 4, fontStyle: 'italic' },
-
+  
+  // CARDS DE ESTRATÉGIA
   sectionTitle: { color: '#52525b', fontSize: 12, fontWeight: 'bold', marginBottom: 10, letterSpacing: 1 },
   planCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#18181b', padding: 20, borderRadius: 16, marginBottom: 40, borderLeftWidth: 4, borderLeftColor: '#3b82f6' },
   planLabel: { color: '#71717a', fontSize: 10, fontWeight: 'bold', marginBottom: 4 },
   planName: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   changeBtn: { backgroundColor: '#27272a', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#3f3f46' },
   changeBtnText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-
   unlinkBtn: { alignItems: 'center', padding: 15 },
   unlinkText: { color: '#ef4444', fontWeight: 'bold' },
 
-  // MODAL DE EDIÇÃO
+  // MODAIS
   modalOverlay: { flex: 1, backgroundColor: '#09090b', paddingTop: 40 },
   modalContent: { flex: 1, padding: 20 },
   modalHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
   modalTitle: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
-  
   row: { flexDirection: 'row', gap: 15 },
   inputGroup: { flex: 1 },
   inputLabel: { color: '#a1a1aa', fontSize: 12, fontWeight: 'bold', marginBottom: 8, marginTop: 15 },
   input: { backgroundColor: '#18181b', color: '#fff', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#27272a', fontSize: 16 },
-
   confirmBtn: { backgroundColor: '#3b82f6', padding: 18, borderRadius: 12, alignItems: 'center', marginTop: 30, marginBottom: 50 },
   confirmText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-
-  // MODAL ESTRATÉGIA DARK
+  
   modalOverlayDark: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', padding: 20 },
   modalContentBox: { backgroundColor: '#18181b', padding: 24, borderRadius: 24, borderWidth: 1, borderColor: '#27272a' },
   modalTitleCenter: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 5, textAlign: 'center' },
@@ -387,13 +456,12 @@ const styles = StyleSheet.create({
   selectionCard: { flex: 1, backgroundColor: '#09090b', padding: 20, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: '#27272a' },
   iconCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#27272a', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   selectionTitle: { color: '#fff', fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
-  selectionDesc: { color: '#71717a', fontSize: 10 },
   templateOption: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, borderRadius: 12, backgroundColor: '#09090b', marginBottom: 10, borderWidth: 1, borderColor: '#27272a' },
   templateActive: { borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)' },
   templateText: { color: '#71717a', fontWeight: 'bold' },
-  modalActions: { flexDirection: 'row', gap: 15, marginTop: 20 },
+  modalActions: { flexDirection: 'row', gap: 15, marginTop: 20, alignItems: 'center' },
   backSmallBtn: { padding: 15, backgroundColor: '#27272a', borderRadius: 12, justifyContent:'center', alignItems:'center' },
-  cancelBtn: { padding: 15, alignItems: 'center', width: '100%' },
+  cancelBtn: { padding: 15, alignItems: 'center' },
   cancelText: { color: '#71717a', fontWeight: 'bold' },
   confirmBtnFull: { flex: 1, backgroundColor: '#3b82f6', borderRadius: 12, alignItems: 'center', justifyContent: 'center', padding: 15 },
 });
