@@ -26,6 +26,7 @@ import TrainerStudentDetailScreen from './src/screens/TrainerStudentDetailScreen
 import TrainerDietLibraryScreen from './src/screens/TrainerDietLibraryScreen';
 import TrainerDietEditorScreen from './src/screens/TrainerDietEditorScreen';
 import RankingScreen from './src/screens/RankingScreen';
+import DadosPessoaisScreen from '@/screens/DadosPessoaisScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -95,6 +96,11 @@ export default function App() {
         <Stack.Screen name="MainTabs" component={TabNavigator} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen 
+  name="DadosPessoais" 
+  component={DadosPessoaisScreen} 
+  options={{ headerShown: false }} 
+/>
         
         {/* FLUXO DO TREINADOR */}
         <Stack.Screen name="TrainerTabs" component={TrainerTabs} />
