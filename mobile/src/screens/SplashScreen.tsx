@@ -1,15 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Animated, 
-  StatusBar,
-  TouchableOpacity,
-  Dimensions
-} from 'react-native';
+import {   View,  Text,  StyleSheet,  Animated,  StatusBar,  TouchableOpacity,  Dimensions} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 
 export default function SplashScreen({ navigation }: any) {
@@ -64,7 +56,7 @@ export default function SplashScreen({ navigation }: any) {
   });
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       
       <TouchableOpacity 
@@ -110,7 +102,7 @@ export default function SplashScreen({ navigation }: any) {
         </View>
 
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 }
 

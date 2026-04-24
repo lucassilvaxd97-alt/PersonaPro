@@ -4,6 +4,7 @@ import {
   ScrollView, ActivityIndicator, Alert, StatusBar, KeyboardAvoidingView, Platform 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 
 export default function TrainerAddStudentScreen({ navigation }: any) {
@@ -91,7 +92,7 @@ export default function TrainerAddStudentScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       
       {/* HEADER */}
@@ -179,7 +180,7 @@ export default function TrainerAddStudentScreen({ navigation }: any) {
 
         </ScrollView>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 

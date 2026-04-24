@@ -13,6 +13,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarChart } from "react-native-gifted-charts"; 
 import { GLView } from 'expo-gl';
 import { Renderer } from 'expo-three';
@@ -122,7 +123,7 @@ export default function AvatarScreen() {
   if (loading) return <View style={styles.loadingOverlay}><ActivityIndicator size="large" color="#d8b4fe" /></View>;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Minha Evolução</Text>
         <View style={styles.tabContainer}>
@@ -274,7 +275,7 @@ export default function AvatarScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

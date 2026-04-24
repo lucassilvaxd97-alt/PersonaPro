@@ -11,6 +11,7 @@ import {
   Dimensions // IMPORTAÇÃO QUE FALTOU!
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../services/supabase';
 import { useFocusEffect } from '@react-navigation/native';
@@ -107,7 +108,7 @@ export default function RankingScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       
       <LinearGradient colors={['#1e1b4b', '#000']} style={styles.header}>
@@ -165,7 +166,7 @@ export default function RankingScreen() {
           <Text style={styles.emptySub}>Aguarde o professor lançar o próximo desafio oficial do Protocolo Caverna.</Text>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

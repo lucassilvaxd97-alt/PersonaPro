@@ -4,6 +4,7 @@ import {
   ActivityIndicator, Alert, TextInput, StatusBar 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -79,7 +80,7 @@ export default function TrainerLibraryScreen({ navigation }: any) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       
       {/* HEADER FIXO */}

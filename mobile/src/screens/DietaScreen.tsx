@@ -4,6 +4,7 @@ import {
   StatusBar, Dimensions, Alert, ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarChart } from "react-native-gifted-charts";
 import { supabase } from '../services/supabase';
 import { useFocusEffect } from '@react-navigation/native';
@@ -158,7 +159,7 @@ export default function DietaScreen({ navigation }: any) {
   if (loading) return <View style={styles.loadingBox}><ActivityIndicator color="#10b981" size="large" /></View>;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
 
       <View style={styles.header}>
@@ -282,7 +283,7 @@ export default function DietaScreen({ navigation }: any) {
         )}
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

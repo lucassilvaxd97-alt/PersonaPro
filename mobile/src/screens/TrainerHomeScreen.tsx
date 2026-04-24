@@ -5,6 +5,7 @@ import {
   ActivityIndicator, RefreshControl, Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -148,7 +149,7 @@ export default function TrainerHomeScreen({ navigation }: any) {
   const activeStudents = students.length;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
 
       {/* HEADER TECH */}

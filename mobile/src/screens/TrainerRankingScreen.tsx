@@ -4,6 +4,7 @@ import {
   ActivityIndicator, Alert, Modal, TextInput, StatusBar, Image, ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -203,7 +204,7 @@ export default function TrainerRankingScreen({ navigation }: any) {
   const currentList = activeTab === 'mes' ? monthlyRanking : challengeRanking;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       
       {/* HEADER */}

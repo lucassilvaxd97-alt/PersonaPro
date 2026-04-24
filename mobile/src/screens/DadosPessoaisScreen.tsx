@@ -130,8 +130,9 @@ export default function DadosPessoaisScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{padding: 20}} showsVerticalScrollIndicator={false}>
-      {/* ... (Header mantido) ... */}
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={{padding: 20}} showsVerticalScrollIndicator={false}>
+        {/* ... (Header mantido) ... */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#3b82f6" />
@@ -182,6 +183,7 @@ export default function DadosPessoaisScreen({ navigation }: any) {
 
       <View style={{height: 40}} />
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

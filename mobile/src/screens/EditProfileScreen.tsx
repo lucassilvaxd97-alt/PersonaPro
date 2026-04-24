@@ -4,6 +4,7 @@ import {
   Image, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, StatusBar 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer'; // <--- A MÁGICA ESTÁ AQUI
 import { supabase } from '../services/supabase';
@@ -134,7 +135,7 @@ export default function EditProfileScreen({ navigation }: any) {
   if (loading) return <View style={styles.loadingContainer}><ActivityIndicator color="#4f46e5" /></View>;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       
       <View style={styles.header}>
@@ -186,7 +187,7 @@ export default function EditProfileScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -4,6 +4,7 @@ import {
   Image, Alert, Modal, ActivityIndicator, StatusBar, TextInput, KeyboardAvoidingView, Platform 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -178,7 +179,7 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
   const hasRestriction = student?.restrictions && student.restrictions.length > 0;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       
       {/* HEADER */}
@@ -397,7 +398,7 @@ export default function TrainerStudentDetailScreen({ route, navigation }: any) {
         </View>
       </Modal>
 
-    </View>
+    </SafeAreaView>
   );
 }
 

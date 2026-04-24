@@ -4,6 +4,7 @@ import {
   Image, ScrollView, Linking, StatusBar 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 
 export default function TrainerConfigScreen({ navigation }: any) {
@@ -61,7 +62,7 @@ export default function TrainerConfigScreen({ navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
 
       {/* 1. CABEÇALHO COM PERFIL */}

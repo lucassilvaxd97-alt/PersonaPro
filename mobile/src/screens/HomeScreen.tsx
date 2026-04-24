@@ -10,6 +10,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../services/supabase';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -108,7 +109,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
 
       {/* HEADER */}
@@ -235,7 +236,7 @@ export default function HomeScreen() {
         
         <View style={{height: 40}} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

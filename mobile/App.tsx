@@ -6,6 +6,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 
+// 🚀 IMPORTANTE: Aqui está o colete à prova de bordas
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 // --- IMPORTANDO AS TELAS ---
 import LoginScreen from './src/screens/LoginScreen'; 
 import HomeScreen from './src/screens/HomeScreen'; 
@@ -27,6 +30,7 @@ import TrainerDietLibraryScreen from './src/screens/TrainerDietLibraryScreen';
 import TrainerDietEditorScreen from './src/screens/TrainerDietEditorScreen';
 import RankingScreen from './src/screens/RankingScreen';
 import DadosPessoaisScreen from '@/screens/DadosPessoaisScreen';
+import ResumoTreinoScreen from './src/screens/ResumoTreinoScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -82,34 +86,34 @@ function TabNavigator() {
 // 2. STACK PRINCIPAL (GERENCIA LOGIN E ABAS)
 export default function App() {
   return (
-    <NavigationContainer>
-      <StatusBar style="light" backgroundColor="#000" />
-      
-      <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+    // 🚀 AQUI A MÁGICA ACONTECE: SafeAreaProvider cobrindo tudo!
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: '#000' }}>
+      <NavigationContainer>
+        <StatusBar style="light" backgroundColor="#000" />
         
-        {/* FLUXO DE AUTENTICAÇÃO E CARREGAMENTO */}
-        <Stack.Screen name="Splash" component={SplashScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="SignUp" component={SignUpScreen} />
-        
-        {/* FLUXO DO ALUNO */}
-        <Stack.Screen name="MainTabs" component={TabNavigator} />
-        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-        <Stack.Screen name="Notifications" component={NotificationsScreen} />
-        <Stack.Screen 
-  name="DadosPessoais" 
-  component={DadosPessoaisScreen} 
-  options={{ headerShown: false }} 
-/>
-        
-        {/* FLUXO DO TREINADOR */}
-        <Stack.Screen name="TrainerTabs" component={TrainerTabs} />
-        <Stack.Screen name="Alunos" component={TrainerStudentsScreen} />
-        <Stack.Screen name="TemplateEditor" component={TemplateEditorScreen} />
-        <Stack.Screen name="TrainerDietEditor" component={TrainerDietEditorScreen} />
-        <Stack.Screen name="TrainerStudentDetail" component={TrainerStudentDetailScreen} />
-        
-      </Stack.Navigator>
-    </NavigationContainer>
+        <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+          
+          {/* FLUXO DE AUTENTICAÇÃO E CARREGAMENTO */}
+          <Stack.Screen name="Splash" component={SplashScreen} />
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          
+          {/* FLUXO DO ALUNO */}
+          <Stack.Screen name="MainTabs" component={TabNavigator} />
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
+          <Stack.Screen name="DadosPessoais" component={DadosPessoaisScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ResumoTreino" component={ResumoTreinoScreen} options={{ headerShown: false }} />
+          
+          {/* FLUXO DO TREINADOR */}
+          <Stack.Screen name="TrainerTabs" component={TrainerTabs} />
+          <Stack.Screen name="Alunos" component={TrainerStudentsScreen} />
+          <Stack.Screen name="TemplateEditor" component={TemplateEditorScreen} />
+          <Stack.Screen name="TrainerDietEditor" component={TrainerDietEditorScreen} />
+          <Stack.Screen name="TrainerStudentDetail" component={TrainerStudentDetailScreen} />
+          
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

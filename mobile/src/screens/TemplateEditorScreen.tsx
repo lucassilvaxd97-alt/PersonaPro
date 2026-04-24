@@ -4,6 +4,7 @@ import {
   ScrollView, Alert, ActivityIndicator, Modal, FlatList, StatusBar, KeyboardAvoidingView, Platform 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 
 type Exercise = { name: string; sets: string; reps: string; obs: string; };
@@ -108,7 +109,7 @@ export default function TemplateEditor({ route, navigation }: any) {
   const currentExercises = splitWorkouts[selectedTab] || [];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       
       <View style={styles.header}>
@@ -251,7 +252,7 @@ export default function TemplateEditor({ route, navigation }: any) {
           />
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

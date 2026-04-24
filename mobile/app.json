@@ -23,7 +23,14 @@
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "name": "IRONPRO",
+      "shortName": "IRONPRO",
+      "themeColor": "#000000",
+      "backgroundColor": "#000000",
+      "display": "standalone" 
+    
     }
   }
 }

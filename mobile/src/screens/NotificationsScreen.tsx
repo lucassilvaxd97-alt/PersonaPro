@@ -4,6 +4,7 @@ import {
   ScrollView, ActivityIndicator, Alert, StatusBar 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 
 export default function NotificationsScreen({ navigation }: any) {
@@ -81,7 +82,7 @@ export default function NotificationsScreen({ navigation }: any) {
   if (loading) return <View style={styles.loadingContainer}><ActivityIndicator color="#4f46e5" /></View>;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000" />
       
       {/* HEADER */}
@@ -152,7 +153,7 @@ export default function NotificationsScreen({ navigation }: any) {
         </TouchableOpacity>
 
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

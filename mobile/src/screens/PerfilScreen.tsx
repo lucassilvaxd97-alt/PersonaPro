@@ -4,6 +4,7 @@ import {
   ActivityIndicator, Alert, StatusBar 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { supabase } from '../services/supabase';
 // 🚀 Importante para atualizar quando voltar
@@ -89,8 +90,9 @@ export default function PerfilScreen({ navigation }: any) {
   if (loading) return <View style={styles.loading}><ActivityIndicator color="#3b82f6" /></View>;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
+    <SafeAreaView style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <StatusBar barStyle="light-content" backgroundColor="#000" />
       
       <View style={styles.header}>
         <Text style={styles.title}>Meu Perfil</Text>
@@ -149,6 +151,7 @@ export default function PerfilScreen({ navigation }: any) {
 
       <View style={{ height: 40 }} />
     </ScrollView>
+    </SafeAreaView>
   );
 }
 

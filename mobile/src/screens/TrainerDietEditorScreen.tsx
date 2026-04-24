@@ -4,6 +4,7 @@ import {
   TextInput, Alert, ActivityIndicator, StatusBar, KeyboardAvoidingView, Platform 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 
 export default function TrainerDietEditorScreen({ navigation, route }: any) {
@@ -132,8 +133,9 @@ export default function TrainerDietEditorScreen({ navigation, route }: any) {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{flex:1}}>
+        <StatusBar barStyle="light-content" backgroundColor="#000" />
       
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -243,6 +245,7 @@ export default function TrainerDietEditorScreen({ navigation, route }: any) {
         <View style={{height: 50}} />
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
